@@ -30,18 +30,24 @@ function HomePage() {
   const [loading, setLoading] = useState(true);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [mapCenter, setMapCenter] = useState<[number, number]>([35.0116, 135.7681]);
+  const [locating, setLocating] = useState(false);
+
+  const fetchUserLocation = () => {
+    if (!navigator.geolocation) return;
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const loc: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+        setUserLocation(loc);
+        setMapCenter(loc);
+        setLocating(false);
+      },
+      () => { setLocating(false); }
+    );
+  };
 
   useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const loc: [number, number] = [pos.coords.latitude, pos.coords.longitude];
-          setUserLocation(loc);
-          setMapCenter(loc);
-        },
-        () => { /* 拒否された場合はデフォルト位置のまま */ }
-      );
-    }
+    fetchUserLocation();
   }, []);
 
   useEffect(() => {
@@ -89,7 +95,7 @@ function HomePage() {
       </div>
 
       {/* Map */}
-      <div className="flex-1">
+      <div className="flex-1 relative">
         <SpotMap
           spots={filteredSpots}
           onSpotSelect={handleSpotSelect}
@@ -97,6 +103,15 @@ function HomePage() {
           center={mapCenter}
           userLocation={userLocation}
         />
+        {/* 現在地ボタン */}
+        <button
+          onClick={fetchUserLocation}
+          disabled={locating}
+          className="absolute bottom-4 right-4 z-[1000] w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center text-lg border border-gray-200 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+          title="現在地を表示"
+        >
+          {locating ? "⏳" : "📍"}
+        </button>
       </div>
 
       {/* Bottom sheet for selected spot */}
