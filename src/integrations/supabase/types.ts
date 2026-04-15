@@ -14,7 +14,110 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      favorites: {
+        Row: {
+          created_at: string
+          id: string
+          spot_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          spot_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          spot_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorites_spot_id_fkey"
+            columns: ["spot_id"]
+            isOneToOne: false
+            referencedRelation: "spots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      spots: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          latitude: number
+          longitude: number
+          photo_url: string | null
+          rest_cue: string | null
+          rest_duration_minutes: number | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+          user_id: string | null
+          walking_minutes: number | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          latitude: number
+          longitude: number
+          photo_url?: string | null
+          rest_cue?: string | null
+          rest_duration_minutes?: number | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          user_id?: string | null
+          walking_minutes?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          photo_url?: string | null
+          rest_cue?: string | null
+          rest_duration_minutes?: number | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          user_id?: string | null
+          walking_minutes?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
