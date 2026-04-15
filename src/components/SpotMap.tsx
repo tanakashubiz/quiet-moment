@@ -1,6 +1,4 @@
-import { useEffect, useRef } from "react";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import { useEffect, useRef, useState } from "react";
 import type { Database } from "@/integrations/supabase/types";
 
 type Spot = Database["public"]["Tables"]["spots"]["Row"];
@@ -21,37 +19,53 @@ export function SpotMap({
   zoom = 14,
 }: SpotMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const leafletMap = useRef<L.Map | null>(null);
-  const markersRef = useRef<L.CircleMarker[]>([]);
+  const leafletMap = useRef<any>(null);
+  const markersRef = useRef<any[]>([]);
+  const [ready, setReady] = useState(false);
+  const LRef = useRef<any>(null);
 
   useEffect(() => {
-    if (!mapRef.current || leafletMap.current) return;
+    if (typeof window === "undefined") return;
 
-    leafletMap.current = L.map(mapRef.current, {
-      zoomControl: true,
-      attributionControl: false,
-    }).setView(center, zoom);
+    let cancelled = false;
 
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
-      maxZoom: 19,
-    }).addTo(leafletMap.current);
+    Promise.all([
+      import("leaflet"),
+      import("leaflet/dist/leaflet.css"),
+    ]).then(([L]) => {
+      if (cancelled || !mapRef.current || leafletMap.current) return;
+      LRef.current = L.default || L;
+      const Leaf = LRef.current;
+
+      leafletMap.current = Leaf.map(mapRef.current!, {
+        zoomControl: true,
+        attributionControl: false,
+      }).setView(center, zoom);
+
+      Leaf.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+        maxZoom: 19,
+      }).addTo(leafletMap.current);
+
+      setReady(true);
+    });
 
     return () => {
+      cancelled = true;
       leafletMap.current?.remove();
       leafletMap.current = null;
     };
   }, []);
 
   useEffect(() => {
-    if (!leafletMap.current) return;
+    if (!ready || !leafletMap.current || !LRef.current) return;
+    const Leaf = LRef.current;
 
-    // Clear existing markers
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
 
     spots.forEach((spot) => {
       const isSelected = spot.id === selectedSpotId;
-      const marker = L.circleMarker([spot.latitude, spot.longitude], {
+      const marker = Leaf.circleMarker([spot.latitude, spot.longitude], {
         radius: isSelected ? 10 : 7,
         fillColor: isSelected ? "#5a8a6a" : "#7aab8a",
         color: "#f8f6f0",
@@ -64,7 +78,7 @@ export function SpotMap({
       marker.addTo(leafletMap.current!);
       markersRef.current.push(marker);
     });
-  }, [spots, selectedSpotId, onSpotSelect]);
+  }, [spots, selectedSpotId, onSpotSelect, ready]);
 
   return <div ref={mapRef} className="w-full h-full" />;
 }
