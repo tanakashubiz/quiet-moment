@@ -9,38 +9,128 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SavedRouteImport } from './routes/saved'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AddSpotRouteImport } from './routes/add-spot'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SpotSpotIdRouteImport } from './routes/spot.$spotId'
+import { Route as RestSpotIdRouteImport } from './routes/rest.$spotId'
 
+const SavedRoute = SavedRouteImport.update({
+  id: '/saved',
+  path: '/saved',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AddSpotRoute = AddSpotRouteImport.update({
+  id: '/add-spot',
+  path: '/add-spot',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SpotSpotIdRoute = SpotSpotIdRouteImport.update({
+  id: '/spot/$spotId',
+  path: '/spot/$spotId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RestSpotIdRoute = RestSpotIdRouteImport.update({
+  id: '/rest/$spotId',
+  path: '/rest/$spotId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/add-spot': typeof AddSpotRoute
+  '/login': typeof LoginRoute
+  '/saved': typeof SavedRoute
+  '/rest/$spotId': typeof RestSpotIdRoute
+  '/spot/$spotId': typeof SpotSpotIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/add-spot': typeof AddSpotRoute
+  '/login': typeof LoginRoute
+  '/saved': typeof SavedRoute
+  '/rest/$spotId': typeof RestSpotIdRoute
+  '/spot/$spotId': typeof SpotSpotIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/add-spot': typeof AddSpotRoute
+  '/login': typeof LoginRoute
+  '/saved': typeof SavedRoute
+  '/rest/$spotId': typeof RestSpotIdRoute
+  '/spot/$spotId': typeof SpotSpotIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/add-spot'
+    | '/login'
+    | '/saved'
+    | '/rest/$spotId'
+    | '/spot/$spotId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/add-spot'
+    | '/login'
+    | '/saved'
+    | '/rest/$spotId'
+    | '/spot/$spotId'
+  id:
+    | '__root__'
+    | '/'
+    | '/add-spot'
+    | '/login'
+    | '/saved'
+    | '/rest/$spotId'
+    | '/spot/$spotId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AddSpotRoute: typeof AddSpotRoute
+  LoginRoute: typeof LoginRoute
+  SavedRoute: typeof SavedRoute
+  RestSpotIdRoute: typeof RestSpotIdRoute
+  SpotSpotIdRoute: typeof SpotSpotIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/saved': {
+      id: '/saved'
+      path: '/saved'
+      fullPath: '/saved'
+      preLoaderRoute: typeof SavedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/add-spot': {
+      id: '/add-spot'
+      path: '/add-spot'
+      fullPath: '/add-spot'
+      preLoaderRoute: typeof AddSpotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +138,30 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/spot/$spotId': {
+      id: '/spot/$spotId'
+      path: '/spot/$spotId'
+      fullPath: '/spot/$spotId'
+      preLoaderRoute: typeof SpotSpotIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rest/$spotId': {
+      id: '/rest/$spotId'
+      path: '/rest/$spotId'
+      fullPath: '/rest/$spotId'
+      preLoaderRoute: typeof RestSpotIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AddSpotRoute: AddSpotRoute,
+  LoginRoute: LoginRoute,
+  SavedRoute: SavedRoute,
+  RestSpotIdRoute: RestSpotIdRoute,
+  SpotSpotIdRoute: SpotSpotIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
