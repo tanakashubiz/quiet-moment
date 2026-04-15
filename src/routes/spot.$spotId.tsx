@@ -140,13 +140,14 @@ function SpotDetailPage() {
           >
             {isFavorite ? "保存済み ♥" : "保存する ♡"}
           </button>
-          <Link
-            to="/rest/$spotId"
-            params={{ spotId: spot.id }}
+          <a
+            href={`https://www.google.com/maps/dir/?api=1&destination=${spot.latitude},${spot.longitude}&travelmode=walking`}
+            target="_blank"
+            rel="noopener noreferrer"
             className="flex-1 text-center py-3 rounded-xl bg-primary text-primary-foreground text-sm font-medium"
           >
-            この場所で休む
-          </Link>
+            経路を見る
+          </a>
         </div>
       </div>
     </div>

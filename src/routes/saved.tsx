@@ -79,7 +79,15 @@ function SavedPage() {
       ) : (
         <div className="px-5 space-y-3">
           {spots.map((spot) => (
-            <SpotCard key={spot.id} spot={spot} />
+            <div key={spot.id} className="relative">
+              <SpotCard spot={spot} />
+              <button
+                onClick={() => navigate({ to: "/", search: { spotId: spot.id } })}
+                className="absolute bottom-3.5 right-3.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium"
+              >
+                地図で見る
+              </button>
+            </div>
           ))}
         </div>
       )}

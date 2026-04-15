@@ -10,6 +10,9 @@ import type { Database } from "@/integrations/supabase/types";
 type Spot = Database["public"]["Tables"]["spots"]["Row"];
 
 export const Route = createFileRoute("/")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    spotId: typeof search.spotId === "string" ? search.spotId : undefined,
+  }),
   component: HomePage,
   head: () => ({
     meta: [
@@ -20,19 +23,53 @@ export const Route = createFileRoute("/")({
 });
 
 function HomePage() {
+  const { spotId: initialSpotId } = Route.useSearch();
   const [spots, setSpots] = useState<Spot[]>([]);
   const [selectedSpot, setSelectedSpot] = useState<Spot | null>(null);
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+  const [mapCenter, setMapCenter] = useState<[number, number]>([35.0116, 135.7681]);
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const loc: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+          setUserLocation(loc);
+          setMapCenter(loc);
+        },
+        () => { /* 拒否された場合はデフォルト位置のまま */ }
+      );
+    }
+  }, []);
 
   useEffect(() => {
     const fetchSpots = async () => {
       const { data } = await supabase.from("spots").select("*");
-      if (data) setSpots(data);
+      if (data) {
+        // 写真がないスポットに仮の自然写真を注入（開発用）
+        const placeholderSeeds = [10, 15, 28, 37, 42, 56, 61, 73, 84, 91];
+        const spotsWithPhotos = data.map((spot, i) => ({
+          ...spot,
+          photo_url: spot.photo_url ?? `https://picsum.photos/seed/${placeholderSeeds[i % placeholderSeeds.length]}/400/300`,
+        }));
+        setSpots(spotsWithPhotos);
+      }
       setLoading(false);
     };
     fetchSpots();
   }, []);
+
+  // 保存ページなどから spotId が渡された場合、spots 読み込み後に自動選択
+  useEffect(() => {
+    if (!initialSpotId || spots.length === 0) return;
+    const target = spots.find((s) => s.id === initialSpotId);
+    if (target) {
+      setSelectedSpot(target);
+      setMapCenter([target.latitude, target.longitude]);
+    }
+  }, [initialSpotId, spots]);
 
   const handleSpotSelect = useCallback((spot: Spot) => {
     setSelectedSpot(spot);
@@ -57,6 +94,8 @@ function HomePage() {
           spots={filteredSpots}
           onSpotSelect={handleSpotSelect}
           selectedSpotId={selectedSpot?.id}
+          center={mapCenter}
+          userLocation={userLocation}
         />
       </div>
 
@@ -99,13 +138,14 @@ function HomePage() {
               >
                 くわしく見る
               </Link>
-              <Link
-                to="/rest/$spotId"
-                params={{ spotId: selectedSpot.id }}
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&destination=${selectedSpot.latitude},${selectedSpot.longitude}&travelmode=walking`}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex-1 text-center py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium"
               >
-                この場所で休む
-              </Link>
+                経路を見る
+              </a>
             </div>
           </div>
         )}

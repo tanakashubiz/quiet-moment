@@ -174,3 +174,20 @@
   outline: 2px solid oklch(0.55 0.08 155 / 0.4);
   outline-offset: 2px;
 }
+
+/* Spot photo tooltip */
+.spot-photo-tooltip {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.spot-photo-tooltip .leaflet-tooltip-content {
+  margin: 0;
+  padding: 0;
+}
+
+.spot-photo-tooltip::before {
+  display: none !important;
+}

@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { LocationPicker } from "@/components/LocationPicker";
 
 const ALL_TAGS = [
   "川沿い", "緑が多い", "静か", "ベンチあり", "人が少ない",
@@ -33,13 +34,63 @@ function AddSpotPage() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [restCue, setRestCue] = useState(REST_CUES[0]);
   const [restDuration, setRestDuration] = useState(5);
-  const [walkingMinutes, setWalkingMinutes] = useState(5);
   const [submitting, setSubmitting] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+
+  const handlePhotoChange = (file: File | null) => {
+    setPhotoFile(file);
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setPhotoPreview(url);
+    } else {
+      setPhotoPreview(null);
+    }
+  };
 
   // Default to central Kyoto
   const [lat, setLat] = useState(35.0116);
   const [lng, setLng] = useState(135.7681);
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [locError, setLocError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const loc: [number, number] = [
+            Number(pos.coords.latitude.toFixed(6)),
+            Number(pos.coords.longitude.toFixed(6)),
+          ];
+          setUserLocation(loc);
+          setLat(loc[0]);
+          setLng(loc[1]);
+        },
+        () => {}
+      );
+    }
+  }, []);
+
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      setLocError("この端末では位置情報が使えません");
+      return;
+    }
+    setLocating(true);
+    setLocError(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLat(Number(pos.coords.latitude.toFixed(6)));
+        setLng(Number(pos.coords.longitude.toFixed(6)));
+        setLocating(false);
+      },
+      () => {
+        setLocError("位置情報の取得に失敗しました");
+        setLocating(false);
+      }
+    );
+  };
 
   if (!user) {
     return (
@@ -82,7 +133,6 @@ function AddSpotPage() {
       description: description.trim() || null,
       latitude: lat,
       longitude: lng,
-      walking_minutes: walkingMinutes,
       tags: selectedTags,
       rest_duration_minutes: restDuration,
       rest_cue: restCue,
@@ -131,27 +181,42 @@ function AddSpotPage() {
         {/* Photo */}
         <div>
           <label className="text-xs font-medium text-muted-foreground block mb-1.5">写真</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setPhotoFile(e.target.files?.[0] || null)}
-            className="text-sm text-muted-foreground"
-          />
-        </div>
-
-        {/* Walking time */}
-        <div>
-          <label className="text-xs font-medium text-muted-foreground block mb-1.5">
-            徒歩時間（分）: {walkingMinutes}分
-          </label>
-          <input
-            type="range"
-            min="1"
-            max="15"
-            value={walkingMinutes}
-            onChange={(e) => setWalkingMinutes(Number(e.target.value))}
-            className="w-full accent-primary"
-          />
+          {photoPreview ? (
+            <div className="relative rounded-xl overflow-hidden mb-2" style={{ height: 180 }}>
+              <img src={photoPreview} alt="プレビュー" className="w-full h-full object-cover" />
+              <button
+                type="button"
+                onClick={() => handlePhotoChange(null)}
+                className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-full bg-black/50 text-white text-xs"
+              >
+                ✕
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <label className="flex-1 flex flex-col items-center justify-center gap-1.5 py-5 rounded-xl border border-dashed border-input bg-card cursor-pointer text-muted-foreground text-xs font-medium">
+                <span className="text-2xl">🖼️</span>
+                アルバムから選ぶ
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handlePhotoChange(e.target.files?.[0] || null)}
+                />
+              </label>
+              <label className="flex-1 flex flex-col items-center justify-center gap-1.5 py-5 rounded-xl border border-dashed border-input bg-card cursor-pointer text-muted-foreground text-xs font-medium">
+                <span className="text-2xl">📷</span>
+                写真を撮る
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={(e) => handlePhotoChange(e.target.files?.[0] || null)}
+                />
+              </label>
+            </div>
+          )}
         </div>
 
         {/* Rest duration */}
@@ -218,26 +283,23 @@ function AddSpotPage() {
 
         {/* Location */}
         <div>
-          <label className="text-xs font-medium text-muted-foreground block mb-1.5">位置情報</label>
-          <div className="flex gap-2">
-            <input
-              type="number"
-              step="0.0001"
-              value={lat}
-              onChange={(e) => setLat(Number(e.target.value))}
-              placeholder="緯度"
-              className="flex-1 px-3 py-2 rounded-xl border border-input bg-card text-xs focus-calm"
-            />
-            <input
-              type="number"
-              step="0.0001"
-              value={lng}
-              onChange={(e) => setLng(Number(e.target.value))}
-              placeholder="経度"
-              className="flex-1 px-3 py-2 rounded-xl border border-input bg-card text-xs focus-calm"
-            />
-          </div>
-          <p className="text-[10px] text-muted-foreground mt-1">※ 京都中心部のデフォルト値が入っています</p>
+          <label className="text-xs font-medium text-muted-foreground block mb-1.5">場所をピンで指定</label>
+          <LocationPicker
+            lat={lat}
+            lng={lng}
+            onChange={(newLat, newLng) => { setLat(newLat); setLng(newLng); }}
+            userLocation={userLocation}
+          />
+          <button
+            type="button"
+            onClick={handleGetLocation}
+            disabled={locating}
+            className="w-full py-2 rounded-xl border border-primary text-primary text-sm font-medium mt-2 disabled:opacity-50 transition-opacity"
+          >
+            {locating ? "取得中..." : "現在地にピンを移動"}
+          </button>
+          {locError && <p className="text-xs text-destructive mt-1">{locError}</p>}
+          <p className="text-[10px] text-muted-foreground mt-1">地図をタップするか、ピンをドラッグして場所を指定してください</p>
         </div>
 
         {/* Submit */}
