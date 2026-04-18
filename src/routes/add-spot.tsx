@@ -3,18 +3,66 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { LocationPicker } from "@/components/LocationPicker";
+import { DurationSlider } from "@/components/DurationSlider";
+import { TAG_GROUPS } from "@/lib/tags";
 
-const ALL_TAGS = [
-  "川沿い", "緑が多い", "静か", "ベンチあり", "人が少ない",
-  "一人向き", "5分休憩向き", "10分休憩向き",
-];
+const DEFAULT_REST_CUE = "空を10秒見る";
 
-const REST_CUES = [
-  "空を10秒見る",
-  "水の音を聞く",
-  "深呼吸を3回する",
-  "スマホを30秒伏せる",
-];
+// タグと休憩ヒントからAIで説明文を生成
+async function generateDescription(
+  tags: string[],
+  restCue: string,
+  duration: number
+): Promise<string> {
+  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    // APIキーがない場合はテンプレートで生成
+    return buildTemplateDescription(tags, restCue, duration);
+  }
+
+  const prompt = `あなたは京都の静かな休息スポットを紹介するアプリのライターです。
+以下の情報をもとに、スポットの説明文を日本語で2〜3文（60〜100文字）で自然に書いてください。
+
+タグ: ${tags.join("、") || "なし"}
+おすすめ休憩時間: ${duration}分
+休憩のヒント: ${restCue}
+
+説明文のみ出力してください。`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true",
+      },
+      body: JSON.stringify({
+        model: "claude-haiku-4-5",
+        max_tokens: 200,
+        messages: [{ role: "user", content: prompt }],
+      }),
+    });
+    const data = await res.json();
+    return data.content?.[0]?.text?.trim() ?? buildTemplateDescription(tags, restCue, duration);
+  } catch {
+    return buildTemplateDescription(tags, restCue, duration);
+  }
+}
+
+function buildTemplateDescription(tags: string[], restCue: string, duration: number): string {
+  const parts: string[] = [];
+  if (tags.includes("川沿い") || tags.includes("水辺")) parts.push("水の流れを感じられる");
+  if (tags.includes("緑が多い") || tags.includes("自然豊か")) parts.push("豊かな緑に包まれた");
+  if (tags.includes("静か") || tags.includes("音が静か")) parts.push("静かで落ち着いた");
+  if (tags.includes("開放的")) parts.push("開放感あふれる");
+  if (tags.includes("景色が良い")) parts.push("眺めの良い");
+  if (tags.includes("穴場")) parts.push("地元に愛される穴場の");
+  const atmosphere = parts.length > 0 ? parts.join("、") + "場所です。" : "静かに過ごせる場所です。";
+  const hint = `${duration}分の小休憩に。${restCue}してみてください。`;
+  return atmosphere + hint;
+}
 
 export const Route = createFileRoute("/add-spot")({
   component: AddSpotPage,
@@ -30,25 +78,15 @@ function AddSpotPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
+  const [generatedDesc, setGeneratedDesc] = useState("");
+  const [generating, setGenerating] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [restCue, setRestCue] = useState(REST_CUES[0]);
+  const restCue = DEFAULT_REST_CUE;
   const [restDuration, setRestDuration] = useState(5);
   const [submitting, setSubmitting] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
-  const handlePhotoChange = (file: File | null) => {
-    setPhotoFile(file);
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setPhotoPreview(url);
-    } else {
-      setPhotoPreview(null);
-    }
-  };
-
-  // Default to central Kyoto
   const [lat, setLat] = useState(35.0116);
   const [lng, setLng] = useState(135.7681);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
@@ -71,6 +109,30 @@ function AddSpotPage() {
       );
     }
   }, []);
+
+  // タグ・ヒント・時間が変わったら説明を自動生成
+  useEffect(() => {
+    if (selectedTags.length === 0) {
+      setGeneratedDesc("");
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setGenerating(true);
+      const desc = await generateDescription(selectedTags, restCue, restDuration);
+      setGeneratedDesc(desc);
+      setGenerating(false);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [selectedTags, restCue, restDuration]);
+
+  const handlePhotoChange = (file: File | null) => {
+    setPhotoFile(file);
+    if (file) {
+      setPhotoPreview(URL.createObjectURL(file));
+    } else {
+      setPhotoPreview(null);
+    }
+  };
 
   const handleGetLocation = () => {
     if (!navigator.geolocation) {
@@ -117,7 +179,6 @@ function AddSpotPage() {
     setSubmitting(true);
 
     let photo_url: string | null = null;
-
     if (photoFile) {
       const ext = photoFile.name.split(".").pop();
       const path = `${user.id}/${Date.now()}.${ext}`;
@@ -130,7 +191,7 @@ function AddSpotPage() {
 
     const { error } = await supabase.from("spots").insert({
       title: title.trim(),
-      description: description.trim() || null,
+      description: generatedDesc || null,
       latitude: lat,
       longitude: lng,
       tags: selectedTags,
@@ -141,9 +202,7 @@ function AddSpotPage() {
     });
 
     setSubmitting(false);
-    if (!error) {
-      navigate({ to: "/" });
-    }
+    if (!error) navigate({ to: "/" });
   };
 
   return (
@@ -153,8 +212,8 @@ function AddSpotPage() {
         <p className="text-xs text-muted-foreground mt-1">あなたの静かな休息場所を共有しましょう</p>
       </div>
 
-      <div className="px-5 space-y-5">
-        {/* Title */}
+      <div className="px-5 space-y-6">
+        {/* 場所の名前 */}
         <div>
           <label className="text-xs font-medium text-muted-foreground block mb-1.5">場所の名前</label>
           <input
@@ -166,19 +225,7 @@ function AddSpotPage() {
           />
         </div>
 
-        {/* Description */}
-        <div>
-          <label className="text-xs font-medium text-muted-foreground block mb-1.5">説明</label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="どんな場所ですか？どんな体験ができますか？"
-            rows={3}
-            className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-card text-sm text-foreground placeholder:text-muted-foreground/50 focus-calm resize-none"
-          />
-        </div>
-
-        {/* Photo */}
+        {/* 写真 */}
         <div>
           <label className="text-xs font-medium text-muted-foreground block mb-1.5">写真</label>
           {photoPreview ? (
@@ -197,91 +244,74 @@ function AddSpotPage() {
               <label className="flex-1 flex flex-col items-center justify-center gap-1.5 py-5 rounded-xl border border-dashed border-input bg-card cursor-pointer text-muted-foreground text-xs font-medium">
                 <span className="text-2xl">🖼️</span>
                 アルバムから選ぶ
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => handlePhotoChange(e.target.files?.[0] || null)}
-                />
+                <input type="file" accept="image/*" className="hidden"
+                  onChange={(e) => handlePhotoChange(e.target.files?.[0] || null)} />
               </label>
               <label className="flex-1 flex flex-col items-center justify-center gap-1.5 py-5 rounded-xl border border-dashed border-input bg-card cursor-pointer text-muted-foreground text-xs font-medium">
                 <span className="text-2xl">📷</span>
                 写真を撮る
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  className="hidden"
-                  onChange={(e) => handlePhotoChange(e.target.files?.[0] || null)}
-                />
+                <input type="file" accept="image/*" capture="environment" className="hidden"
+                  onChange={(e) => handlePhotoChange(e.target.files?.[0] || null)} />
               </label>
             </div>
           )}
         </div>
 
-        {/* Rest duration */}
+        {/* おすすめ休憩時間 */}
+        <div className="bg-card rounded-xl px-4 py-3 border border-input">
+          <DurationSlider value={restDuration} onChange={setRestDuration} />
+        </div>
+
+        {/* タグ */}
         <div>
-          <label className="text-xs font-medium text-muted-foreground block mb-1.5">
-            おすすめ休憩時間
-          </label>
-          <div className="flex gap-2">
-            {[5, 10].map((d) => (
-              <button
-                key={d}
-                onClick={() => setRestDuration(d)}
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
-                  restDuration === d
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary text-secondary-foreground"
-                }`}
-              >
-                {d}分
-              </button>
+          <label className="text-xs font-medium text-muted-foreground block mb-2">タグ</label>
+          <div className="space-y-3">
+            {TAG_GROUPS.map((group) => (
+              <div key={group.label}>
+                <p className="text-[10px] text-muted-foreground mb-1.5">{group.label}</p>
+                <div className="flex flex-wrap gap-2">
+                  {group.tags.map((tag) => (
+                    <button
+                      key={tag}
+                      onClick={() => toggleTag(tag)}
+                      className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                        selectedTags.includes(tag)
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-secondary text-secondary-foreground"
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         </div>
 
-        {/* Tags */}
-        <div>
-          <label className="text-xs font-medium text-muted-foreground block mb-1.5">タグ</label>
-          <div className="flex flex-wrap gap-2">
-            {ALL_TAGS.map((tag) => (
-              <button
-                key={tag}
-                onClick={() => toggleTag(tag)}
-                className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                  selectedTags.includes(tag)
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary text-secondary-foreground"
-                }`}
-              >
-                {tag}
-              </button>
-            ))}
+        {/* 自動生成された説明（編集可能） */}
+        {(generatedDesc || generating) && (
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-medium text-muted-foreground">
+                ✨ 説明文
+              </label>
+              {generating && (
+                <span className="text-[10px] text-muted-foreground animate-pulse">生成中...</span>
+              )}
+            </div>
+            <textarea
+              value={generatedDesc}
+              onChange={(e) => setGeneratedDesc(e.target.value)}
+              rows={3}
+              disabled={generating}
+              placeholder="タグを選ぶと自動で生成されます"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-card text-sm text-foreground placeholder:text-muted-foreground/50 focus-calm resize-none disabled:opacity-50"
+            />
           </div>
-        </div>
+        )}
 
-        {/* Rest cue */}
-        <div>
-          <label className="text-xs font-medium text-muted-foreground block mb-1.5">休息のヒント</label>
-          <div className="flex flex-wrap gap-2">
-            {REST_CUES.map((cue) => (
-              <button
-                key={cue}
-                onClick={() => setRestCue(cue)}
-                className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                  restCue === cue
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary text-secondary-foreground"
-                }`}
-              >
-                {cue}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Location */}
+        {/* 場所をピンで指定 */}
         <div>
           <label className="text-xs font-medium text-muted-foreground block mb-1.5">場所をピンで指定</label>
           <LocationPicker
@@ -302,7 +332,7 @@ function AddSpotPage() {
           <p className="text-[10px] text-muted-foreground mt-1">地図をタップするか、ピンをドラッグして場所を指定してください</p>
         </div>
 
-        {/* Submit */}
+        {/* 投稿ボタン */}
         <button
           onClick={handleSubmit}
           disabled={!title.trim() || submitting}

@@ -10,7 +10,7 @@ export function NavBar() {
     { to: "/" as const, label: "地図", icon: "🗺️" },
     { to: "/saved" as const, label: "保存", icon: "♡" },
     { to: "/add-spot" as const, label: "投稿", icon: "＋" },
-    { to: user ? "/saved" as const : "/login" as const, label: user ? "マイ" : "ログイン", icon: user ? "👤" : "🔑" },
+    { to: "/settings" as const, label: "設定", icon: "⚙️" },
   ];
 
   // Hide navbar on rest mode
