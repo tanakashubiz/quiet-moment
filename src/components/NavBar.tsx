@@ -13,7 +13,10 @@ export function NavBar() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-[9999] bg-card/95 backdrop-blur-sm border-t border-border/50 safe-area-bottom">
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-[9999] bg-card/95 backdrop-blur-sm border-t border-border/50"
+      style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+    >
       <div className="flex items-center justify-around h-14 max-w-lg mx-auto">
         {navItems.map((item) => {
           const isActive = path === item.to || (item.to === "/" && path === "/");

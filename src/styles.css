@@ -115,6 +115,29 @@
   }
 }
 
+/* ── セーフエリア対応 ──────────────────────────────────────────── */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* iOSでタップ時のハイライトを消す */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* スクロールバーを隠す（スマホ向け） */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Leaflet overrides for calm aesthetic */
 .leaflet-container {
   font-family: "Noto Sans JP", sans-serif !important;

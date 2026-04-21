@@ -197,7 +197,7 @@ function HomePage() {
       />
 
       {/* 上部フローティングUI */}
-      <div className="absolute top-0 left-0 right-0 z-[1000] pointer-events-none">
+      <div className="absolute top-0 left-0 right-0 z-[1000] pointer-events-none" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
         <div className="max-w-lg mx-auto px-3 pt-12 flex items-start gap-2">
 
           {/* 地域チップ列（flex-1で検索ボタンを右端に固定） */}

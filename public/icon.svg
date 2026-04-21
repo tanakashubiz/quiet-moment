@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Warm paper background -->
+  <rect width="512" height="512" rx="108" fill="#f4f0e6"/>
+  <!-- Sage green leaf shape -->
+  <path d="M256 90 C 155 125 125 220 148 305 C 170 388 256 425 256 425 C 256 425 342 388 364 305 C 387 220 357 125 256 90 Z" fill="#6b9c7a"/>
+  <!-- Stem -->
+  <line x1="256" y1="425" x2="256" y2="460" stroke="#6b9c7a" stroke-width="18" stroke-linecap="round"/>
+  <!-- White highlight vein -->
+  <path d="M256 140 C 256 200 240 300 256 425" stroke="white" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.4"/>
+</svg>

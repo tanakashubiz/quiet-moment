@@ -1,0 +1,20 @@
+{
+  "name": "目の前",
+  "short_name": "目の前",
+  "description": "忙しい日常から5分だけ離れる。静かな休息スポットを見つける",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f0e6",
+  "theme_color": "#f4f0e6",
+  "orientation": "portrait-primary",
+  "lang": "ja",
+  "categories": ["travel", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
