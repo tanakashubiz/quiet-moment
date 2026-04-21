@@ -18,10 +18,8 @@ export function BottomSheet({ isOpen, onClose, children }: BottomSheetProps) {
           transition={{ type: "spring", damping: 30, stiffness: 300 }}
           className="fixed bottom-0 left-0 right-0 z-[2001] bg-card bottom-sheet max-h-[75vh] overflow-y-auto"
         >
-          {/* ハンドル + 閉じるボタン */}
-          <div className="flex items-center justify-between px-4 pt-3 pb-1">
-            <div className="w-8" />
-            <div className="w-10 h-1 bg-border rounded-full" />
+          {/* 閉じるボタン */}
+          <div className="flex items-center justify-end px-4 pt-3 pb-1">
             <button
               onClick={onClose}
               className="w-8 h-8 flex items-center justify-center rounded-full bg-secondary text-muted-foreground text-sm"
