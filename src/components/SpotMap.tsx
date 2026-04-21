@@ -10,6 +10,7 @@ interface SpotMapProps {
   center?: [number, number];
   zoom?: number;
   userLocation?: [number, number] | null;
+  interactive?: boolean;
 }
 
 export function SpotMap({
@@ -18,6 +19,7 @@ export function SpotMap({
   selectedSpotId,
   center = [35.0116, 135.7681],
   zoom = 14,
+  interactive = true,
   userLocation,
 }: SpotMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
@@ -67,6 +69,23 @@ export function SpotMap({
     if (!ready || !leafletMap.current) return;
     leafletMap.current.setView(center, leafletMap.current.getZoom(), { animate: true });
   }, [ready, center]);
+
+  // 詳細シートが開いているとき地図操作をロック
+  useEffect(() => {
+    if (!ready || !leafletMap.current) return;
+    const map = leafletMap.current;
+    if (interactive) {
+      map.dragging.enable();
+      map.touchZoom.enable();
+      map.scrollWheelZoom.enable();
+      map.doubleClickZoom.enable();
+    } else {
+      map.dragging.disable();
+      map.touchZoom.disable();
+      map.scrollWheelZoom.disable();
+      map.doubleClickZoom.disable();
+    }
+  }, [ready, interactive]);
 
   useEffect(() => {
     if (!ready || !leafletMap.current || !LRef.current) return;
