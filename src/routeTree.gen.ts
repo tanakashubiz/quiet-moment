@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SavedRouteImport } from './routes/saved'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AddSpotRouteImport } from './routes/add-spot'
@@ -16,6 +17,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as SpotSpotIdRouteImport } from './routes/spot.$spotId'
 import { Route as RestSpotIdRouteImport } from './routes/rest.$spotId'
 
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SavedRoute = SavedRouteImport.update({
   id: '/saved',
   path: '/saved',
@@ -52,6 +58,7 @@ export interface FileRoutesByFullPath {
   '/add-spot': typeof AddSpotRoute
   '/login': typeof LoginRoute
   '/saved': typeof SavedRoute
+  '/settings': typeof SettingsRoute
   '/rest/$spotId': typeof RestSpotIdRoute
   '/spot/$spotId': typeof SpotSpotIdRoute
 }
@@ -60,6 +67,7 @@ export interface FileRoutesByTo {
   '/add-spot': typeof AddSpotRoute
   '/login': typeof LoginRoute
   '/saved': typeof SavedRoute
+  '/settings': typeof SettingsRoute
   '/rest/$spotId': typeof RestSpotIdRoute
   '/spot/$spotId': typeof SpotSpotIdRoute
 }
@@ -69,6 +77,7 @@ export interface FileRoutesById {
   '/add-spot': typeof AddSpotRoute
   '/login': typeof LoginRoute
   '/saved': typeof SavedRoute
+  '/settings': typeof SettingsRoute
   '/rest/$spotId': typeof RestSpotIdRoute
   '/spot/$spotId': typeof SpotSpotIdRoute
 }
@@ -79,6 +88,7 @@ export interface FileRouteTypes {
     | '/add-spot'
     | '/login'
     | '/saved'
+    | '/settings'
     | '/rest/$spotId'
     | '/spot/$spotId'
   fileRoutesByTo: FileRoutesByTo
@@ -87,6 +97,7 @@ export interface FileRouteTypes {
     | '/add-spot'
     | '/login'
     | '/saved'
+    | '/settings'
     | '/rest/$spotId'
     | '/spot/$spotId'
   id:
@@ -95,6 +106,7 @@ export interface FileRouteTypes {
     | '/add-spot'
     | '/login'
     | '/saved'
+    | '/settings'
     | '/rest/$spotId'
     | '/spot/$spotId'
   fileRoutesById: FileRoutesById
@@ -104,12 +116,20 @@ export interface RootRouteChildren {
   AddSpotRoute: typeof AddSpotRoute
   LoginRoute: typeof LoginRoute
   SavedRoute: typeof SavedRoute
+  SettingsRoute: typeof SettingsRoute
   RestSpotIdRoute: typeof RestSpotIdRoute
   SpotSpotIdRoute: typeof SpotSpotIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/saved': {
       id: '/saved'
       path: '/saved'
@@ -160,6 +180,7 @@ const rootRouteChildren: RootRouteChildren = {
   AddSpotRoute: AddSpotRoute,
   LoginRoute: LoginRoute,
   SavedRoute: SavedRoute,
+  SettingsRoute: SettingsRoute,
   RestSpotIdRoute: RestSpotIdRoute,
   SpotSpotIdRoute: SpotSpotIdRoute,
 }

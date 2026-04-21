@@ -1,6 +1,9 @@
+import { useEffect } from "react";
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { AuthProvider } from "@/lib/auth-context";
 import { NavBar } from "@/components/NavBar";
+import { Toaster } from "@/components/ui/sonner";
+import { loadSavedTheme } from "@/lib/theme";
 
 import appCss from "../styles.css?url";
 
@@ -66,12 +69,17 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  useEffect(() => {
+    loadSavedTheme();
+  }, []);
+
   return (
     <AuthProvider>
       <div className="max-w-lg mx-auto relative">
         <Outlet />
         <NavBar />
       </div>
+      <Toaster />
     </AuthProvider>
   );
 }
