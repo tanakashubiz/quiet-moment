@@ -151,16 +151,13 @@ export function SpotMap({
           offset: [0, -24],
         });
 
-        // ツールチップのカードをタップ/クリックしても詳細を開く
+        // ツールチップカードをタップ/クリックでも詳細を開く
         marker.on("tooltipopen", (e: any) => {
           const el = e.tooltip.getElement();
-          if (el) {
-            el.addEventListener("click", () => onSpotSelect(spot));
-            el.addEventListener("touchend", (te: TouchEvent) => {
-              te.preventDefault();
-              onSpotSelect(spot);
-            });
-          }
+          if (!el) return;
+          el.style.cursor = "pointer";
+          // onclick直接代入でハンドラ重複を防ぐ
+          el.onclick = () => onSpotSelect(spot);
         });
       }
 
