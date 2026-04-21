@@ -186,7 +186,7 @@ function HomePage() {
     : [];
 
   return (
-    <div className="h-screen relative overflow-hidden">
+    <div className="fixed inset-0 overflow-hidden">
       {/* Map（全画面） */}
       <SpotMap
         spots={filteredSpots}
