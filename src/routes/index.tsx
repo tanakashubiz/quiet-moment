@@ -194,7 +194,7 @@ function HomePage() {
         selectedSpotId={selectedSpot?.id}
         center={mapCenter}
         userLocation={userLocation}
-        interactive={!selectedSpot}
+        interactive={true}
       />
 
       {/* 上部フローティングUI */}
