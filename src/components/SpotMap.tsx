@@ -1,6 +1,16 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import type { Database } from "@/integrations/supabase/types";
 
+function calcWalkingMinutes(from: [number, number], to: [number, number]): number {
+  const R = 6371000;
+  const lat1 = (from[0] * Math.PI) / 180;
+  const lat2 = (to[0] * Math.PI) / 180;
+  const dLat = ((to[0] - from[0]) * Math.PI) / 180;
+  const dLon = ((to[1] - from[1]) * Math.PI) / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+  return Math.max(1, Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) / 80));
+}
+
 type Spot = Database["public"]["Tables"]["spots"]["Row"];
 
 interface SpotMapProps {
@@ -252,7 +262,9 @@ export function SpotMap({
                 {previewSpot.title}
               </div>
               <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>
-                徒歩{previewSpot.walking_minutes}分
+                徒歩{userLocation
+                  ? calcWalkingMinutes(userLocation, [previewSpot.latitude, previewSpot.longitude])
+                  : previewSpot.walking_minutes}分
               </div>
             </div>
           </div>
