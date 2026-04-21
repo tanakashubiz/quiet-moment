@@ -7,7 +7,6 @@ import { BottomSheet } from "@/components/BottomSheet";
 import { SearchPanel, searchSpots } from "@/components/SearchPanel";
 import type { SearchQuery } from "@/components/SearchPanel";
 import { SearchIcon, NavigationIcon } from "@/components/Icons";
-import { formatArea, getAreaCenter, spotInAreaSelections, type AreaSelection } from "@/lib/regions";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -20,8 +19,8 @@ export const Route = createFileRoute("/")({
   component: HomePage,
   head: () => ({
     meta: [
-      { title: "目の前 — 京都の静かな休息スポット" },
-      { name: "description", content: "忙しい日常から5分だけ離れる。京都中心部の静かな休息スポットを見つけて、今この瞬間に戻る。" },
+      { title: "目の前 — 関西の静かな休息スポット" },
+      { name: "description", content: "忙しい日常から5分だけ離れる。静かな休息スポットを見つけて、今この瞬間に戻る。" },
     ],
   }),
 });
@@ -59,38 +58,6 @@ function HomePage() {
   // お気に入り
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [favLoading, setFavLoading] = useState(false);
-
-  // 地域フィルター
-  const userMainArea: AreaSelection | null = user?.user_metadata?.main_area ?? null;
-  const userSubAreas: AreaSelection[] = user?.user_metadata?.sub_areas ?? [];
-  const [activeAreas, setActiveAreas] = useState<AreaSelection[] | null>(null);
-
-  const areaKey = (a: AreaSelection) =>
-    `${a.prefectureId}|${a.cityId}|${a.districtId ?? ""}`;
-
-  useEffect(() => {
-    if (userMainArea) {
-      setActiveAreas([userMainArea]);
-      const center = getAreaCenter(userMainArea);
-      if (center) setMapCenter(center);
-    } else {
-      setActiveAreas(null);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userMainArea ? areaKey(userMainArea) : null]);
-
-  const toggleArea = (area: AreaSelection) => {
-    const key = areaKey(area);
-    setActiveAreas((prev) => {
-      if (prev === null) return [area];
-      const exists = prev.some((a) => areaKey(a) === key);
-      if (exists) {
-        const next = prev.filter((a) => areaKey(a) !== key);
-        return next.length === 0 ? null : next;
-      }
-      return [...prev, area];
-    });
-  };
 
   // 検索パネル
   const [searchOpen, setSearchOpen] = useState(false);
@@ -175,15 +142,7 @@ function HomePage() {
     setFavLoading(false);
   };
 
-  const searchFiltered = searchSpots(spots, searchQuery);
-  const filteredSpots = activeAreas
-    ? searchFiltered.filter((s) => spotInAreaSelections(s.latitude, s.longitude, activeAreas))
-    : searchFiltered;
-
-  // ユーザーの地域リスト（メイン + サブ、重複除去）
-  const userAreas: AreaSelection[] = userMainArea
-    ? [userMainArea, ...userSubAreas.filter((a) => areaKey(a) !== areaKey(userMainArea))]
-    : [];
+  const filteredSpots = searchSpots(spots, searchQuery);
 
   return (
     <div className="fixed inset-0 overflow-hidden">
@@ -199,58 +158,7 @@ function HomePage() {
 
       {/* 上部フローティングUI */}
       <div className="absolute top-0 left-0 right-0 z-[1000] pointer-events-none" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
-        <div className="max-w-lg mx-auto px-3 pt-3 flex items-start gap-2">
-
-          {/* 地域チップ列（flex-1で検索ボタンを右端に固定） */}
-          <div className="flex-1 flex gap-1.5 flex-wrap pointer-events-auto">
-            {userAreas.length > 0 && (
-              <>
-                {/* 全域チップ */}
-                <button
-                  onClick={() => setActiveAreas(null)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium shadow-sm backdrop-blur-sm transition-colors ${
-                    activeAreas === null
-                      ? "bg-foreground text-background"
-                      : "bg-white/85 text-muted-foreground"
-                  }`}
-                >
-                  全域
-                </button>
-                {/* メイン地域 */}
-                {userMainArea && (
-                  <button
-                    onClick={() => toggleArea(userMainArea)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium shadow-sm backdrop-blur-sm transition-colors ${
-                      activeAreas?.some((a) => areaKey(a) === areaKey(userMainArea))
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-white/85 text-muted-foreground"
-                    }`}
-                  >
-                    {formatArea(userMainArea)}
-                  </button>
-                )}
-                {/* サブ地域 */}
-                {userSubAreas
-                  .filter((a) => areaKey(a) !== areaKey(userMainArea!))
-                  .map((area) => {
-                    const key = areaKey(area);
-                    return (
-                      <button
-                        key={key}
-                        onClick={() => toggleArea(area)}
-                        className={`px-3 py-1 rounded-full text-xs font-medium shadow-sm backdrop-blur-sm transition-colors ${
-                          activeAreas?.some((a) => areaKey(a) === key)
-                            ? "bg-secondary text-secondary-foreground border border-primary/30"
-                            : "bg-white/85 text-muted-foreground"
-                        }`}
-                      >
-                        {formatArea(area)}
-                      </button>
-                    );
-                  })}
-              </>
-            )}
-          </div>
+        <div className="max-w-lg mx-auto px-3 pt-3 flex items-center justify-end gap-2">
 
           {/* 現在地ボタン */}
           <button
@@ -258,7 +166,6 @@ function HomePage() {
             disabled={locating}
             className="pointer-events-auto w-11 h-11 rounded-full flex items-center justify-center shadow-md backdrop-blur-sm bg-white/90 text-foreground shrink-0 disabled:opacity-50 transition-colors"
             aria-label="現在地"
-            title="現在地を表示"
           >
             <NavigationIcon size={20} strokeWidth={2} className={locating ? "animate-pulse" : ""} />
           </button>
