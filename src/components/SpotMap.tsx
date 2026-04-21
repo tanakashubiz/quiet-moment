@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import type { Database } from "@/integrations/supabase/types";
 
 type Spot = Database["public"]["Tables"]["spots"]["Row"];
@@ -29,6 +29,33 @@ export function SpotMap({
   const [ready, setReady] = useState(false);
   const LRef = useRef<any>(null);
 
+  // Reactで描画するプレビューカード
+  const [previewSpot, setPreviewSpot] = useState<Spot | null>(null);
+  const [previewPixel, setPreviewPixel] = useState<{ x: number; y: number } | null>(null);
+  const previewSpotRef = useRef<Spot | null>(null);
+
+  const refreshPixel = useCallback((spot: Spot) => {
+    if (!leafletMap.current) return;
+    const p = leafletMap.current.latLngToContainerPoint([spot.latitude, spot.longitude]);
+    setPreviewPixel({ x: p.x, y: p.y });
+  }, []);
+
+  const clearPreview = useCallback(() => {
+    setPreviewSpot(null);
+    setPreviewPixel(null);
+    previewSpotRef.current = null;
+  }, []);
+
+  // 地図移動・ズーム時にプレビューカードの位置を更新
+  useEffect(() => {
+    if (!ready || !leafletMap.current) return;
+    const handler = () => {
+      if (previewSpotRef.current) refreshPixel(previewSpotRef.current);
+    };
+    leafletMap.current.on("move zoom", handler);
+    return () => { leafletMap.current?.off("move zoom", handler); };
+  }, [ready, refreshPixel]);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -54,6 +81,9 @@ export function SpotMap({
         maxZoom: 19,
       }).addTo(leafletMap.current);
 
+      // 地図背景クリックでプレビューを閉じる
+      leafletMap.current.on("click", () => clearPreview());
+
       setReady(true);
     });
 
@@ -70,7 +100,7 @@ export function SpotMap({
     leafletMap.current.setView(center, leafletMap.current.getZoom(), { animate: true });
   }, [ready, center]);
 
-  // 詳細シートが開いているとき地図操作をロック
+  // interactive フラグで地図操作をロック
   useEffect(() => {
     if (!ready || !leafletMap.current) return;
     const map = leafletMap.current;
@@ -93,10 +123,10 @@ export function SpotMap({
 
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
+    clearPreview();
 
     spots.forEach((spot) => {
       const isSelected = spot.id === selectedSpotId;
-
       let marker: any;
 
       if (spot.photo_url) {
@@ -119,7 +149,6 @@ export function SpotMap({
           `,
           iconSize: [size, size],
           iconAnchor: [size / 2, size / 2],
-          popupAnchor: [0, -(size / 2)],
         });
         marker = Leaf.marker([spot.latitude, spot.longitude], { icon });
       } else {
@@ -133,39 +162,25 @@ export function SpotMap({
         });
       }
 
-      if (spot.photo_url) {
-        const tooltipHtml = `
-          <div style="width:160px;padding:0;border-radius:10px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.15);cursor:pointer;">
-            <img src="${spot.photo_url}" style="width:100%;height:100px;object-fit:cover;display:block;" onerror="this.style.display='none'" />
-            <div style="padding:8px 10px;background:#fff;">
-              <div style="font-size:12px;font-weight:600;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${spot.title}</div>
-              <div style="font-size:11px;color:#888;margin-top:2px;">徒歩${spot.walking_minutes}分</div>
-            </div>
-          </div>
-        `;
-        marker.bindTooltip(tooltipHtml, {
-          direction: "top",
-          permanent: false,
-          opacity: 1,
-          className: "spot-photo-tooltip",
-          offset: [0, -24],
-        });
+      // アイコンタップ → プレビューカード表示
+      // プレビュー中に同じアイコンを再タップ → 詳細シート
+      marker.on("click", (e: any) => {
+        Leaf.DomEvent.stopPropagation(e);
+        if (previewSpotRef.current?.id === spot.id) {
+          onSpotSelect(spot);
+          clearPreview();
+        } else {
+          previewSpotRef.current = spot;
+          setPreviewSpot(spot);
+          const p = leafletMap.current.latLngToContainerPoint([spot.latitude, spot.longitude]);
+          setPreviewPixel({ x: p.x, y: p.y });
+        }
+      });
 
-        // ツールチップカードをタップ/クリックでも詳細を開く
-        marker.on("tooltipopen", (e: any) => {
-          const el = e.tooltip.getElement();
-          if (!el) return;
-          el.style.cursor = "pointer";
-          // onclick直接代入でハンドラ重複を防ぐ
-          el.onclick = () => onSpotSelect(spot);
-        });
-      }
-
-      marker.on("click", () => onSpotSelect(spot));
       marker.addTo(leafletMap.current!);
       markersRef.current.push(marker);
     });
-  }, [spots, selectedSpotId, onSpotSelect, ready]);
+  }, [spots, selectedSpotId, onSpotSelect, ready, clearPreview]);
 
   // 現在地マーカー
   useEffect(() => {
@@ -198,5 +213,61 @@ export function SpotMap({
     }
   }, [ready, userLocation]);
 
-  return <div ref={mapRef} className="w-full h-full" />;
+  return (
+    <div className="w-full h-full relative">
+      <div ref={mapRef} className="w-full h-full" />
+
+      {/* Reactプレビューカード（Leafletツールチップの代替） */}
+      {previewSpot && previewPixel && (
+        <div
+          className="absolute z-[3000] pointer-events-auto"
+          style={{
+            left: previewPixel.x,
+            top: previewPixel.y - 152,
+            transform: "translateX(-50%)",
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onSpotSelect(previewSpot);
+            clearPreview();
+          }}
+        >
+          <div style={{
+            width: 160,
+            borderRadius: 12,
+            overflow: "hidden",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.18)",
+            cursor: "pointer",
+            background: "#fff",
+          }}>
+            {previewSpot.photo_url && (
+              <img
+                src={previewSpot.photo_url}
+                alt={previewSpot.title}
+                style={{ width: "100%", height: 100, objectFit: "cover", display: "block" }}
+              />
+            )}
+            <div style={{ padding: "8px 10px" }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#333", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {previewSpot.title}
+              </div>
+              <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>
+                徒歩{previewSpot.walking_minutes}分
+              </div>
+            </div>
+          </div>
+          {/* 吹き出しの三角 */}
+          <div style={{
+            width: 0,
+            height: 0,
+            borderLeft: "8px solid transparent",
+            borderRight: "8px solid transparent",
+            borderTop: "8px solid #fff",
+            margin: "0 auto",
+            filter: "drop-shadow(0 2px 2px rgba(0,0,0,0.08))",
+          }} />
+        </div>
+      )}
+    </div>
+  );
 }
