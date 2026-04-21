@@ -41,9 +41,12 @@ export function SpotMap({
       const Leaf = LRef.current;
 
       leafletMap.current = Leaf.map(mapRef.current!, {
-        zoomControl: true,
+        zoomControl: false,
         attributionControl: false,
       }).setView(center, zoom);
+
+      // ズームコントロールをナビバーの上（右下）に配置
+      Leaf.control.zoom({ position: "bottomright" }).addTo(leafletMap.current);
 
       Leaf.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
         maxZoom: 19,
@@ -113,7 +116,7 @@ export function SpotMap({
 
       if (spot.photo_url) {
         const tooltipHtml = `
-          <div style="width:160px;padding:0;border-radius:10px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+          <div style="width:160px;padding:0;border-radius:10px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.15);cursor:pointer;">
             <img src="${spot.photo_url}" style="width:100%;height:100px;object-fit:cover;display:block;" onerror="this.style.display='none'" />
             <div style="padding:8px 10px;background:#fff;">
               <div style="font-size:12px;font-weight:600;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${spot.title}</div>
@@ -127,6 +130,18 @@ export function SpotMap({
           opacity: 1,
           className: "spot-photo-tooltip",
           offset: [0, -24],
+        });
+
+        // ツールチップのカードをタップ/クリックしても詳細を開く
+        marker.on("tooltipopen", (e: any) => {
+          const el = e.tooltip.getElement();
+          if (el) {
+            el.addEventListener("click", () => onSpotSelect(spot));
+            el.addEventListener("touchend", (te: TouchEvent) => {
+              te.preventDefault();
+              onSpotSelect(spot);
+            });
+          }
         });
       }
 

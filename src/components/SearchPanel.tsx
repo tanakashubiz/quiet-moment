@@ -101,25 +101,6 @@ export function SearchPanel({ query, onChange, onClose }: SearchPanelProps) {
         </div>
       </div>
 
-      {/* 休憩のヒント */}
-      <div>
-        <p className="text-xs text-muted-foreground mb-2">💭 休憩のヒント</p>
-        <div className="flex flex-wrap gap-2">
-          {REST_CUES.map((cue) => (
-            <button
-              key={cue}
-              onClick={() => toggleCue(cue)}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                query.restCues.includes(cue)
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-secondary-foreground"
-              }`}
-            >
-              {cue}
-            </button>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

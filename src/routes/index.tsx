@@ -198,7 +198,7 @@ function HomePage() {
 
       {/* 上部フローティングUI */}
       <div className="absolute top-0 left-0 right-0 z-[1000] pointer-events-none" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
-        <div className="max-w-lg mx-auto px-3 pt-12 flex items-start gap-2">
+        <div className="max-w-lg mx-auto px-3 pt-3 flex items-start gap-2">
 
           {/* 地域チップ列（flex-1で検索ボタンを右端に固定） */}
           <div className="flex-1 flex gap-1.5 flex-wrap pointer-events-auto">
@@ -255,24 +255,24 @@ function HomePage() {
           <button
             onClick={fetchUserLocation}
             disabled={locating}
-            className="pointer-events-auto w-9 h-9 rounded-full flex items-center justify-center shadow-sm backdrop-blur-sm bg-white/85 text-foreground shrink-0 disabled:opacity-50 transition-colors"
+            className="pointer-events-auto w-11 h-11 rounded-full flex items-center justify-center shadow-md backdrop-blur-sm bg-white/90 text-foreground shrink-0 disabled:opacity-50 transition-colors"
             aria-label="現在地"
             title="現在地を表示"
           >
-            <NavigationIcon size={16} strokeWidth={2} className={locating ? "animate-pulse" : ""} />
+            <NavigationIcon size={20} strokeWidth={2} className={locating ? "animate-pulse" : ""} />
           </button>
 
           {/* 検索ボタン */}
           <button
             onClick={() => setSearchOpen((v) => !v)}
-            className={`pointer-events-auto w-9 h-9 rounded-full flex items-center justify-center shadow-sm backdrop-blur-sm transition-colors shrink-0 ${
+            className={`pointer-events-auto w-11 h-11 rounded-full flex items-center justify-center shadow-md backdrop-blur-sm transition-colors shrink-0 ${
               searchOpen || hasSearch
                 ? "bg-primary text-primary-foreground"
-                : "bg-white/85 text-foreground"
+                : "bg-white/90 text-foreground"
             }`}
             aria-label="検索"
           >
-            <SearchIcon size={16} strokeWidth={2} />
+            <SearchIcon size={20} strokeWidth={2} />
           </button>
         </div>
 
