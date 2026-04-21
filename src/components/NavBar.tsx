@@ -1,23 +1,19 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { useAuth } from "@/lib/auth-context";
+import { MapIcon, HeartIcon, PlusIcon, SettingsIcon } from "@/components/Icons";
 
 export function NavBar() {
   const location = useLocation();
-  const { user } = useAuth();
   const path = location.pathname;
 
   const navItems = [
-    { to: "/" as const, label: "地図", icon: "🗺️" },
-    { to: "/saved" as const, label: "保存", icon: "♡" },
-    { to: "/add-spot" as const, label: "投稿", icon: "＋" },
-    { to: "/settings" as const, label: "設定", icon: "⚙️" },
+    { to: "/" as const, label: "地図", Icon: MapIcon },
+    { to: "/saved" as const, label: "保存", Icon: HeartIcon },
+    { to: "/add-spot" as const, label: "投稿", Icon: PlusIcon },
+    { to: "/settings" as const, label: "設定", Icon: SettingsIcon },
   ];
 
-  // Hide navbar on rest mode
-  if (path.startsWith("/rest")) return null;
-
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-30 bg-card/95 backdrop-blur-sm border-t border-border/50 safe-area-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 z-[9999] bg-card/95 backdrop-blur-sm border-t border-border/50 safe-area-bottom">
       <div className="flex items-center justify-around h-14 max-w-lg mx-auto">
         {navItems.map((item) => {
           const isActive = path === item.to || (item.to === "/" && path === "/");
@@ -29,7 +25,7 @@ export function NavBar() {
                 isActive ? "text-primary" : "text-muted-foreground"
               }`}
             >
-              <span className="text-lg leading-none">{item.icon}</span>
+              <item.Icon size={20} strokeWidth={isActive ? 2.5 : 1.8} />
               <span className="text-[10px] font-medium">{item.label}</span>
             </Link>
           );

@@ -1,5 +1,3 @@
-import { useState } from "react";
-
 const FILTERS = [
   { id: "5min", label: "5分以内" },
   { id: "10min", label: "10分以内" },
@@ -46,7 +44,6 @@ export function FilterBar({ activeFilters, onFiltersChange }: FilterBarProps) {
   );
 }
 
-// Helper to filter spots based on active filters
 export function filterSpots(
   spots: Array<{
     walking_minutes: number | null;

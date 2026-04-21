@@ -6,6 +6,8 @@ import { SpotMap } from "@/components/SpotMap";
 import { BottomSheet } from "@/components/BottomSheet";
 import { SearchPanel, searchSpots } from "@/components/SearchPanel";
 import type { SearchQuery } from "@/components/SearchPanel";
+import { SearchIcon, NavigationIcon } from "@/components/Icons";
+import { formatArea, getAreaCenter, spotInAreaSelections, type AreaSelection } from "@/lib/regions";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -24,24 +26,18 @@ export const Route = createFileRoute("/")({
   }),
 });
 
-/** ハバーサイン距離から徒歩分数を計算（80m/分） */
 function calcWalkingMinutes(from: [number, number], to: [number, number]): number {
   const R = 6371000;
   const lat1 = (from[0] * Math.PI) / 180;
   const lat2 = (to[0] * Math.PI) / 180;
   const dLat = ((to[0] - from[0]) * Math.PI) / 180;
   const dLon = ((to[1] - from[1]) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
-  const dist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return Math.max(1, Math.round(dist / 80));
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+  return Math.max(1, Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) / 80));
 }
 
-/** created_at を「○日前」形式に */
 function relativeDate(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const days = Math.floor(diff / 86_400_000);
+  const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86_400_000);
   if (days === 0) return "今日";
   if (days === 1) return "昨日";
   if (days < 7) return `${days}日前`;
@@ -56,7 +52,6 @@ function HomePage() {
 
   const [spots, setSpots] = useState<Spot[]>([]);
   const [selectedSpot, setSelectedSpot] = useState<Spot | null>(null);
-  const [loading, setLoading] = useState(true);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [mapCenter, setMapCenter] = useState<[number, number]>([35.0116, 135.7681]);
   const [locating, setLocating] = useState(false);
@@ -64,6 +59,38 @@ function HomePage() {
   // お気に入り
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [favLoading, setFavLoading] = useState(false);
+
+  // 地域フィルター
+  const userMainArea: AreaSelection | null = user?.user_metadata?.main_area ?? null;
+  const userSubAreas: AreaSelection[] = user?.user_metadata?.sub_areas ?? [];
+  const [activeAreas, setActiveAreas] = useState<AreaSelection[] | null>(null);
+
+  const areaKey = (a: AreaSelection) =>
+    `${a.prefectureId}|${a.cityId}|${a.districtId ?? ""}`;
+
+  useEffect(() => {
+    if (userMainArea) {
+      setActiveAreas([userMainArea]);
+      const center = getAreaCenter(userMainArea);
+      if (center) setMapCenter(center);
+    } else {
+      setActiveAreas(null);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userMainArea ? areaKey(userMainArea) : null]);
+
+  const toggleArea = (area: AreaSelection) => {
+    const key = areaKey(area);
+    setActiveAreas((prev) => {
+      if (prev === null) return [area];
+      const exists = prev.some((a) => areaKey(a) === key);
+      if (exists) {
+        const next = prev.filter((a) => areaKey(a) !== key);
+        return next.length === 0 ? null : next;
+      }
+      return [...prev, area];
+    });
+  };
 
   // 検索パネル
   const [searchOpen, setSearchOpen] = useState(false);
@@ -94,7 +121,7 @@ function HomePage() {
       (err) => {
         setLocating(false);
         if (err.code === err.PERMISSION_DENIED) {
-          toast.error("位置情報の許可が必要です。ブラウザの設定から許可してください。");
+          toast.error("位置情報の許可が必要です");
         } else {
           toast.error("現在地を取得できませんでした");
         }
@@ -102,59 +129,37 @@ function HomePage() {
     );
   };
 
-  useEffect(() => {
-    fetchUserLocation();
-  }, []);
+  useEffect(() => { fetchUserLocation(); }, []);
 
   useEffect(() => {
-    const fetchSpots = async () => {
-      const { data } = await supabase.from("spots").select("*");
+    supabase.from("spots").select("*").then(({ data }) => {
       if (data) {
-        const placeholderSeeds = [10, 15, 28, 37, 42, 56, 61, 73, 84, 91];
-        const spotsWithPhotos = data.map((spot, i) => ({
+        const seeds = [10, 15, 28, 37, 42, 56, 61, 73, 84, 91];
+        setSpots(data.map((spot, i) => ({
           ...spot,
-          photo_url: spot.photo_url ?? `https://picsum.photos/seed/${placeholderSeeds[i % placeholderSeeds.length]}/400/300`,
-        }));
-        setSpots(spotsWithPhotos);
+          photo_url: spot.photo_url ?? `https://picsum.photos/seed/${seeds[i % seeds.length]}/400/300`,
+        })));
       }
-      setLoading(false);
-    };
-    fetchSpots();
+    });
   }, []);
 
-  // ユーザーが変わったらお気に入りを再取得
   useEffect(() => {
-    if (!user) {
-      setFavoriteIds(new Set());
-      return;
-    }
-    supabase
-      .from("favorites")
-      .select("spot_id")
-      .eq("user_id", user.id)
-      .then(({ data }) => {
-        if (data) setFavoriteIds(new Set(data.map((r) => r.spot_id)));
-      });
+    if (!user) { setFavoriteIds(new Set()); return; }
+    supabase.from("favorites").select("spot_id").eq("user_id", user.id).then(({ data }) => {
+      if (data) setFavoriteIds(new Set(data.map((r) => r.spot_id)));
+    });
   }, [user]);
 
   useEffect(() => {
     if (!initialSpotId || spots.length === 0) return;
     const target = spots.find((s) => s.id === initialSpotId);
-    if (target) {
-      setSelectedSpot(target);
-      setMapCenter([target.latitude, target.longitude]);
-    }
+    if (target) { setSelectedSpot(target); setMapCenter([target.latitude, target.longitude]); }
   }, [initialSpotId, spots]);
 
-  const handleSpotSelect = useCallback((spot: Spot) => {
-    setSelectedSpot(spot);
-  }, []);
+  const handleSpotSelect = useCallback((spot: Spot) => setSelectedSpot(spot), []);
 
   const toggleFavorite = async (spotId: string) => {
-    if (!user) {
-      toast.error("お気に入りにはログインが必要です");
-      return;
-    }
+    if (!user) { toast.error("お気に入りにはログインが必要です"); return; }
     if (favLoading) return;
     setFavLoading(true);
     const isFav = favoriteIds.has(spotId);
@@ -170,67 +175,126 @@ function HomePage() {
     setFavLoading(false);
   };
 
-  const filteredSpots = searchSpots(spots, searchQuery);
+  const searchFiltered = searchSpots(spots, searchQuery);
+  const filteredSpots = activeAreas
+    ? searchFiltered.filter((s) => spotInAreaSelections(s.latitude, s.longitude, activeAreas))
+    : searchFiltered;
+
+  // ユーザーの地域リスト（メイン + サブ、重複除去）
+  const userAreas: AreaSelection[] = userMainArea
+    ? [userMainArea, ...userSubAreas.filter((a) => areaKey(a) !== areaKey(userMainArea))]
+    : [];
 
   return (
-    <div className="h-screen flex flex-col">
-      {/* Header */}
-      <div className="shrink-0 z-20 bg-background shadow-sm">
-        <div className="px-4 pt-3 pb-1 flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-semibold text-foreground tracking-wide">目の前</h1>
-            <p className="text-[10px] text-muted-foreground">5分だけ、今ここに戻る</p>
+    <div className="h-screen relative overflow-hidden">
+      {/* Map（全画面） */}
+      <SpotMap
+        spots={filteredSpots}
+        onSpotSelect={handleSpotSelect}
+        selectedSpotId={selectedSpot?.id}
+        center={mapCenter}
+        userLocation={userLocation}
+      />
+
+      {/* 上部フローティングUI */}
+      <div className="absolute top-0 left-0 right-0 z-[1000] pointer-events-none">
+        <div className="max-w-lg mx-auto px-3 pt-12 flex items-start gap-2">
+
+          {/* 地域チップ列（flex-1で検索ボタンを右端に固定） */}
+          <div className="flex-1 flex gap-1.5 flex-wrap pointer-events-auto">
+            {userAreas.length > 0 && (
+              <>
+                {/* 全域チップ */}
+                <button
+                  onClick={() => setActiveAreas(null)}
+                  className={`px-3 py-1 rounded-full text-xs font-medium shadow-sm backdrop-blur-sm transition-colors ${
+                    activeAreas === null
+                      ? "bg-foreground text-background"
+                      : "bg-white/85 text-muted-foreground"
+                  }`}
+                >
+                  全域
+                </button>
+                {/* メイン地域 */}
+                {userMainArea && (
+                  <button
+                    onClick={() => toggleArea(userMainArea)}
+                    className={`px-3 py-1 rounded-full text-xs font-medium shadow-sm backdrop-blur-sm transition-colors ${
+                      activeAreas?.some((a) => areaKey(a) === areaKey(userMainArea))
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-white/85 text-muted-foreground"
+                    }`}
+                  >
+                    {formatArea(userMainArea)}
+                  </button>
+                )}
+                {/* サブ地域 */}
+                {userSubAreas
+                  .filter((a) => areaKey(a) !== areaKey(userMainArea!))
+                  .map((area) => {
+                    const key = areaKey(area);
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => toggleArea(area)}
+                        className={`px-3 py-1 rounded-full text-xs font-medium shadow-sm backdrop-blur-sm transition-colors ${
+                          activeAreas?.some((a) => areaKey(a) === key)
+                            ? "bg-secondary text-secondary-foreground border border-primary/30"
+                            : "bg-white/85 text-muted-foreground"
+                        }`}
+                      >
+                        {formatArea(area)}
+                      </button>
+                    );
+                  })}
+              </>
+            )}
           </div>
+
+          {/* 現在地ボタン */}
+          <button
+            onClick={fetchUserLocation}
+            disabled={locating}
+            className="pointer-events-auto w-9 h-9 rounded-full flex items-center justify-center shadow-sm backdrop-blur-sm bg-white/85 text-foreground shrink-0 disabled:opacity-50 transition-colors"
+            aria-label="現在地"
+            title="現在地を表示"
+          >
+            <NavigationIcon size={16} strokeWidth={2} className={locating ? "animate-pulse" : ""} />
+          </button>
+
+          {/* 検索ボタン */}
           <button
             onClick={() => setSearchOpen((v) => !v)}
-            className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
+            className={`pointer-events-auto w-9 h-9 rounded-full flex items-center justify-center shadow-sm backdrop-blur-sm transition-colors shrink-0 ${
               searchOpen || hasSearch
                 ? "bg-primary text-primary-foreground"
-                : "bg-secondary text-secondary-foreground"
+                : "bg-white/85 text-foreground"
             }`}
-            title="検索"
-            aria-label="検索パネルを開く"
+            aria-label="検索"
           >
-            🔍
+            <SearchIcon size={16} strokeWidth={2} />
           </button>
         </div>
 
+        {/* 検索パネル */}
         {searchOpen && (
-          <SearchPanel
-            query={searchQuery}
-            onChange={setSearchQuery}
-            onClose={() => setSearchOpen(false)}
-          />
+          <div className="pointer-events-auto max-w-lg mx-auto">
+            <SearchPanel
+              query={searchQuery}
+              onChange={setSearchQuery}
+              onClose={() => setSearchOpen(false)}
+            />
+          </div>
         )}
       </div>
 
-      {/* Map */}
-      <div className="flex-1 relative">
-        <SpotMap
-          spots={filteredSpots}
-          onSpotSelect={handleSpotSelect}
-          selectedSpotId={selectedSpot?.id}
-          center={mapCenter}
-          userLocation={userLocation}
-        />
-        <button
-          onClick={fetchUserLocation}
-          disabled={locating}
-          className="absolute bottom-4 right-4 z-[1000] w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center text-lg border border-gray-200 hover:bg-gray-50 active:bg-gray-100 transition-colors"
-          title="現在地を表示"
-        >
-          {locating ? "⏳" : "📍"}
-        </button>
-      </div>
-
-      {/* Bottom sheet for selected spot */}
+      {/* Bottom sheet */}
       <BottomSheet isOpen={!!selectedSpot} onClose={() => setSelectedSpot(null)}>
         {selectedSpot && (() => {
           const walkMins = userLocation
             ? calcWalkingMinutes(userLocation, [selectedSpot.latitude, selectedSpot.longitude])
             : selectedSpot.walking_minutes;
           const isFav = favoriteIds.has(selectedSpot.id);
-
           return (
             <div>
               {selectedSpot.photo_url && (
@@ -240,21 +304,19 @@ function HomePage() {
                   className="w-full h-40 object-cover rounded-xl mb-3"
                 />
               )}
-
-              {/* タイトル + お気に入りボタン */}
               <div className="flex items-start justify-between gap-2">
                 <h2 className="text-base font-semibold text-foreground flex-1">{selectedSpot.title}</h2>
                 <button
                   onClick={() => toggleFavorite(selectedSpot.id)}
                   disabled={favLoading}
-                  className="w-9 h-9 flex items-center justify-center rounded-full bg-secondary text-xl shrink-0 active:scale-90 transition-transform"
+                  className="w-9 h-9 flex items-center justify-center rounded-full bg-secondary shrink-0 active:scale-90 transition-transform text-foreground"
                   aria-label={isFav ? "お気に入りから削除" : "お気に入りに追加"}
                 >
-                  {isFav ? "♥" : "♡"}
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill={isFav ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+                  </svg>
                 </button>
               </div>
-
-              {/* 徒歩時間 / 休憩時間 / 投稿日 */}
               <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground flex-wrap">
                 {walkMins != null && (
                   <span>🚶 徒歩{walkMins}分{userLocation ? "（現在地から）" : ""}</span>
@@ -266,13 +328,9 @@ function HomePage() {
                   <span>🕐 {relativeDate(selectedSpot.created_at)}</span>
                 )}
               </div>
-
               {selectedSpot.description && (
-                <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-                  {selectedSpot.description}
-                </p>
+                <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{selectedSpot.description}</p>
               )}
-
               {selectedSpot.tags && selectedSpot.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mt-3">
                   {selectedSpot.tags.map((tag) => (
@@ -280,7 +338,6 @@ function HomePage() {
                   ))}
                 </div>
               )}
-
               <div className="mt-4">
                 <a
                   href={`https://www.google.com/maps/dir/?api=1&destination=${selectedSpot.latitude},${selectedSpot.longitude}&travelmode=walking`}
@@ -295,9 +352,6 @@ function HomePage() {
           );
         })()}
       </BottomSheet>
-
-      {/* Spacer for bottom nav */}
-      <div className="h-14" />
     </div>
   );
 }
