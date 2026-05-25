@@ -104,7 +104,6 @@ function SpotDetailPage() {
         <h1 className="text-xl font-semibold text-foreground">{spot.title}</h1>
 
         <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
-          {spot.walking_minutes && <span>🚶 徒歩{spot.walking_minutes}分</span>}
           {spot.rest_duration_minutes && <span>⏱ {spot.rest_duration_minutes}分休憩</span>}
         </div>
 

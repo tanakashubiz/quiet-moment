@@ -43,6 +43,8 @@ export function SpotMap({
       leafletMap.current = Leaf.map(mapRef.current!, {
         zoomControl: true,
         attributionControl: false,
+        zoomDelta: 0.5,
+        zoomSnap: 0.5,
       }).setView(center, zoom);
 
       Leaf.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
@@ -117,7 +119,6 @@ export function SpotMap({
             <img src="${spot.photo_url}" style="width:100%;height:100px;object-fit:cover;display:block;" onerror="this.style.display='none'" />
             <div style="padding:8px 10px;background:#fff;">
               <div style="font-size:12px;font-weight:600;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${spot.title}</div>
-              <div style="font-size:11px;color:#888;margin-top:2px;">徒歩${spot.walking_minutes}分</div>
             </div>
           </div>
         `;

@@ -26,16 +26,6 @@ export const Route = createFileRoute("/")({
   }),
 });
 
-function calcWalkingMinutes(from: [number, number], to: [number, number]): number {
-  const R = 6371000;
-  const lat1 = (from[0] * Math.PI) / 180;
-  const lat2 = (to[0] * Math.PI) / 180;
-  const dLat = ((to[0] - from[0]) * Math.PI) / 180;
-  const dLon = ((to[1] - from[1]) * Math.PI) / 180;
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
-  return Math.max(1, Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) / 80));
-}
-
 function relativeDate(dateStr: string): string {
   const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86_400_000);
   if (days === 0) return "今日";
@@ -291,9 +281,6 @@ function HomePage() {
       {/* Bottom sheet */}
       <BottomSheet isOpen={!!selectedSpot} onClose={() => setSelectedSpot(null)}>
         {selectedSpot && (() => {
-          const walkMins = userLocation
-            ? calcWalkingMinutes(userLocation, [selectedSpot.latitude, selectedSpot.longitude])
-            : selectedSpot.walking_minutes;
           const isFav = favoriteIds.has(selectedSpot.id);
           return (
             <div>
@@ -318,9 +305,6 @@ function HomePage() {
                 </button>
               </div>
               <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground flex-wrap">
-                {walkMins != null && (
-                  <span>🚶 徒歩{walkMins}分{userLocation ? "（現在地から）" : ""}</span>
-                )}
                 {selectedSpot.rest_duration_minutes && (
                   <span>⏱ {selectedSpot.rest_duration_minutes}分休憩</span>
                 )}

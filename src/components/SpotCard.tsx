@@ -34,11 +34,6 @@ export function SpotCard({ spot, compact = false }: SpotCardProps) {
             </p>
           )}
           <div className="flex items-center gap-2 mt-2">
-            {spot.walking_minutes && (
-              <span className="text-xs text-muted-foreground">
-                🚶 {spot.walking_minutes}分
-              </span>
-            )}
             {spot.rest_duration_minutes && (
               <span className="text-xs text-muted-foreground">
                 ⏱ {spot.rest_duration_minutes}分休憩
