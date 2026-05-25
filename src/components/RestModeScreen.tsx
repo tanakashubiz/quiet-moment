@@ -1,13 +1,12 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface RestModeScreenProps {
   cue: string;
-  spotTitle: string;
   onClose: () => void;
 }
 
-export function RestModeScreen({ cue, spotTitle, onClose }: RestModeScreenProps) {
+export function RestModeScreen({ cue, onClose }: RestModeScreenProps) {
   const [timerSeconds, setTimerSeconds] = useState(60);
   const [isRunning, setIsRunning] = useState(false);
   const [showCue, setShowCue] = useState(true);
@@ -48,16 +47,6 @@ export function RestModeScreen({ cue, spotTitle, onClose }: RestModeScreenProps)
       </button>
 
       <div className="flex flex-col items-center text-center max-w-sm">
-        {/* Spot title */}
-        <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="text-xs text-muted-foreground mb-8"
-        >
-          {spotTitle}
-        </motion.p>
-
         {/* Rest cue */}
         <AnimatePresence>
           {showCue && (

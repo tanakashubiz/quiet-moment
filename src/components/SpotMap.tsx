@@ -117,9 +117,6 @@ export function SpotMap({
         const tooltipHtml = `
           <div style="width:160px;padding:0;border-radius:10px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.15);">
             <img src="${spot.photo_url}" style="width:100%;height:100px;object-fit:cover;display:block;" onerror="this.style.display='none'" />
-            <div style="padding:8px 10px;background:#fff;">
-              <div style="font-size:12px;font-weight:600;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${spot.title}</div>
-            </div>
           </div>
         `;
         marker.bindTooltip(tooltipHtml, {

@@ -16,13 +16,13 @@ export const Route = createFileRoute("/rest/$spotId")({
 function RestPage() {
   const { spotId } = Route.useParams();
   const navigate = useNavigate();
-  const [spot, setSpot] = useState<{ title: string; rest_cue: string | null } | null>(null);
+  const [spot, setSpot] = useState<{ rest_cue: string | null } | null>(null);
 
   useEffect(() => {
     const fetchSpot = async () => {
       const { data } = await supabase
         .from("spots")
-        .select("title, rest_cue")
+        .select("rest_cue")
         .eq("id", spotId)
         .single();
       if (data) setSpot(data);
@@ -41,7 +41,6 @@ function RestPage() {
   return (
     <RestModeScreen
       cue={spot.rest_cue || "深呼吸を3回する"}
-      spotTitle={spot.title}
       onClose={() => navigate({ to: "/spot/$spotId", params: { spotId } })}
     />
   );

@@ -287,12 +287,11 @@ function HomePage() {
               {selectedSpot.photo_url && (
                 <img
                   src={selectedSpot.photo_url}
-                  alt={selectedSpot.title}
+                  alt="休息スポットの写真"
                   className="w-full h-40 object-cover rounded-xl mb-3"
                 />
               )}
-              <div className="flex items-start justify-between gap-2">
-                <h2 className="text-base font-semibold text-foreground flex-1">{selectedSpot.title}</h2>
+              <div className="flex justify-end">
                 <button
                   onClick={() => toggleFavorite(selectedSpot.id)}
                   disabled={favLoading}

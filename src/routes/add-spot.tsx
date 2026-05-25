@@ -19,7 +19,6 @@ export const Route = createFileRoute("/add-spot")({
 function AddSpotPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [title, setTitle] = useState("");
   const restCue = DEFAULT_REST_CUE;
   const [submitting, setSubmitting] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -94,7 +93,6 @@ function AddSpotPage() {
   }
 
   const handleSubmit = async () => {
-    if (!title.trim()) return;
     setSubmitting(true);
 
     let photo_url: string | null = null;
@@ -109,7 +107,7 @@ function AddSpotPage() {
     }
 
     const { error } = await supabase.from("spots").insert({
-      title: title.trim(),
+      title: `投稿スポット-${Date.now()}`,
       description: null,
       latitude: lat,
       longitude: lng,
@@ -131,20 +129,6 @@ function AddSpotPage() {
       </div>
 
       <div className="px-5 space-y-6">
-        {/* 場所の名前 */}
-        <div>
-          <label className="text-xs font-medium text-muted-foreground block mb-1.5">
-            場所の名前
-          </label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="例：鴨川・丸太町ベンチ"
-            className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-card text-sm text-foreground placeholder:text-muted-foreground/50 focus-calm"
-          />
-        </div>
-
         {/* 写真 */}
         <div>
           <label className="text-xs font-medium text-muted-foreground block mb-1.5">写真</label>
@@ -217,7 +201,7 @@ function AddSpotPage() {
         {/* 投稿ボタン */}
         <button
           onClick={handleSubmit}
-          disabled={!title.trim() || submitting}
+          disabled={submitting}
           className="w-full py-3 rounded-xl bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50 transition-opacity"
         >
           {submitting ? "投稿中..." : "投稿する"}

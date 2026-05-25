@@ -83,7 +83,7 @@ function SpotDetailPage() {
       {/* Photo */}
       {spot.photo_url && (
         <div className="relative h-56">
-          <img src={spot.photo_url} alt={spot.title} className="w-full h-full object-cover" />
+          <img src={spot.photo_url} alt="休息スポットの写真" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent" />
           <button
             onClick={() => navigate({ to: "/" })}
@@ -101,9 +101,7 @@ function SpotDetailPage() {
       )}
 
       <div className="px-5 pt-4">
-        <h1 className="text-xl font-semibold text-foreground">{spot.title}</h1>
-
-        <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
+        <div className="flex items-center gap-3 text-sm text-muted-foreground">
           {spot.rest_duration_minutes && <span>⏱ {spot.rest_duration_minutes}分休憩</span>}
         </div>
 

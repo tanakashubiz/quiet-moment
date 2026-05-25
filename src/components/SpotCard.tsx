@@ -20,16 +20,15 @@ export function SpotCard({ spot, compact = false }: SpotCardProps) {
           <div className={compact ? "h-32" : "h-40"}>
             <img
               src={spot.photo_url}
-              alt={spot.title}
+              alt="休息スポットの写真"
               className="w-full h-full object-cover"
               loading="lazy"
             />
           </div>
         )}
         <div className="p-3.5">
-          <h3 className="font-medium text-sm text-foreground leading-snug">{spot.title}</h3>
           {!compact && spot.description && (
-            <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2 leading-relaxed">
+            <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
               {spot.description}
             </p>
           )}
