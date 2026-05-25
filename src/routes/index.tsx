@@ -36,6 +36,24 @@ function relativeDate(dateStr: string): string {
   return `${Math.floor(days / 365)}年前`;
 }
 
+function readLocalVisitedSpotIds(userId: string): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const value = window.localStorage.getItem(`visited_spots:${userId}`);
+    const ids = value ? JSON.parse(value) : [];
+    return Array.isArray(ids)
+      ? new Set(ids.filter((id): id is string => typeof id === "string"))
+      : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
+function writeLocalVisitedSpotIds(userId: string, ids: Set<string>) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(`visited_spots:${userId}`, JSON.stringify([...ids]));
+}
+
 function HomePage() {
   const { spotId: initialSpotId } = Route.useSearch();
   const { user } = useAuth();
@@ -49,6 +67,8 @@ function HomePage() {
   // お気に入り
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [favLoading, setFavLoading] = useState(false);
+  const [visitedSpotIds, setVisitedSpotIds] = useState<Set<string>>(new Set());
+  const [visitLoading, setVisitLoading] = useState(false);
 
   // 地域フィルター
   const userMainArea: AreaSelection | null = user?.user_metadata?.main_area ?? null;
@@ -141,6 +161,22 @@ function HomePage() {
   }, [user]);
 
   useEffect(() => {
+    if (!user) {
+      setVisitedSpotIds(new Set());
+      return;
+    }
+    supabase.from("visited_spots").select("spot_id").eq("user_id", user.id).then(({ data, error }) => {
+      if (data) {
+        const ids = new Set(data.map((r) => r.spot_id));
+        setVisitedSpotIds(ids);
+        writeLocalVisitedSpotIds(user.id, ids);
+      } else if (error) {
+        setVisitedSpotIds(readLocalVisitedSpotIds(user.id));
+      }
+    });
+  }, [user]);
+
+  useEffect(() => {
     if (!initialSpotId || spots.length === 0) return;
     const target = spots.find((s) => s.id === initialSpotId);
     if (target) { setSelectedSpot(target); setMapCenter([target.latitude, target.longitude]); }
@@ -165,6 +201,30 @@ function HomePage() {
     setFavLoading(false);
   };
 
+  const toggleVisited = async (spotId: string) => {
+    if (!user) { toast.error("行った記録にはログインが必要です"); return; }
+    if (visitLoading) return;
+    setVisitLoading(true);
+
+    const wasVisited = visitedSpotIds.has(spotId);
+    const next = new Set(visitedSpotIds);
+    if (wasVisited) next.delete(spotId);
+    else next.add(spotId);
+    setVisitedSpotIds(next);
+    writeLocalVisitedSpotIds(user.id, next);
+
+    const { error } = wasVisited
+      ? await supabase.from("visited_spots").delete().eq("user_id", user.id).eq("spot_id", spotId)
+      : await supabase.from("visited_spots").insert({ user_id: user.id, spot_id: spotId });
+
+    if (error) {
+      toast.success(wasVisited ? "この端末で行ったを取り消しました" : "この端末に行ったを保存しました");
+    } else {
+      toast.success(wasVisited ? "行ったを取り消しました" : "行ったに追加しました");
+    }
+    setVisitLoading(false);
+  };
+
   const searchFiltered = searchSpots(spots, searchQuery);
   const filteredSpots = activeAreas
     ? searchFiltered.filter((s) => spotInAreaSelections(s.latitude, s.longitude, activeAreas))
@@ -182,6 +242,8 @@ function HomePage() {
         spots={filteredSpots}
         onSpotSelect={handleSpotSelect}
         selectedSpotId={selectedSpot?.id}
+        visitedSpotIds={visitedSpotIds}
+        currentUserId={user?.id}
         center={mapCenter}
         userLocation={userLocation}
       />
@@ -282,6 +344,8 @@ function HomePage() {
       <BottomSheet isOpen={!!selectedSpot} onClose={() => setSelectedSpot(null)}>
         {selectedSpot && (() => {
           const isFav = favoriteIds.has(selectedSpot.id);
+          const isOwnSpot = !!user && selectedSpot.user_id === user.id;
+          const isVisited = visitedSpotIds.has(selectedSpot.id);
           return (
             <div>
               {selectedSpot.photo_url && (
@@ -291,7 +355,20 @@ function HomePage() {
                   className="w-full h-40 object-cover rounded-xl mb-3"
                 />
               )}
-              <div className="flex justify-end">
+              <div className="flex items-center justify-end gap-2">
+                {!isOwnSpot && (
+                  <button
+                    onClick={() => toggleVisited(selectedSpot.id)}
+                    disabled={visitLoading}
+                    className={`flex-1 py-2.5 rounded-xl border text-sm font-medium transition-colors disabled:opacity-50 ${
+                      isVisited
+                        ? "border-blue-600 bg-blue-600 text-white"
+                        : "border-border bg-card text-foreground"
+                    }`}
+                  >
+                    行った
+                  </button>
+                )}
                 <button
                   onClick={() => toggleFavorite(selectedSpot.id)}
                   disabled={favLoading}

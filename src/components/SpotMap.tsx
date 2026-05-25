@@ -7,6 +7,8 @@ interface SpotMapProps {
   spots: Spot[];
   onSpotSelect: (spot: Spot) => void;
   selectedSpotId?: string;
+  visitedSpotIds?: Set<string>;
+  currentUserId?: string;
   center?: [number, number];
   zoom?: number;
   userLocation?: [number, number] | null;
@@ -16,6 +18,8 @@ export function SpotMap({
   spots,
   onSpotSelect,
   selectedSpotId,
+  visitedSpotIds = new Set(),
+  currentUserId,
   center = [35.0116, 135.7681],
   zoom = 14,
   userLocation,
@@ -76,6 +80,12 @@ export function SpotMap({
 
     spots.forEach((spot) => {
       const isSelected = spot.id === selectedSpotId;
+      const isOwnSpot = !!currentUserId && spot.user_id === currentUserId;
+      const isVisitedSpot =
+        !!currentUserId && spot.user_id !== currentUserId && visitedSpotIds.has(spot.id);
+      const statusBorderColor = isOwnSpot ? "#f97316" : isVisitedSpot ? "#2563eb" : null;
+      const borderColor = statusBorderColor ?? (isSelected ? "#5a8a6a" : "#f8f6f0");
+      const borderWidth = statusBorderColor || isSelected ? 3 : 2;
 
       let marker: any;
 
@@ -88,7 +98,7 @@ export function SpotMap({
               width: ${size}px;
               height: ${size}px;
               border-radius: 50%;
-              border: ${isSelected ? "3px" : "2px"} solid ${isSelected ? "#5a8a6a" : "#f8f6f0"};
+              border: ${borderWidth}px solid ${borderColor};
               box-shadow: 0 2px 6px rgba(0,0,0,0.3);
               overflow: hidden;
               cursor: pointer;
@@ -106,8 +116,8 @@ export function SpotMap({
         marker = Leaf.circleMarker([spot.latitude, spot.longitude], {
           radius: isSelected ? 10 : 7,
           fillColor: isSelected ? "#5a8a6a" : "#7aab8a",
-          color: "#f8f6f0",
-          weight: 2,
+          color: borderColor,
+          weight: borderWidth,
           opacity: 1,
           fillOpacity: isSelected ? 1 : 0.85,
         });
@@ -132,7 +142,7 @@ export function SpotMap({
       marker.addTo(leafletMap.current!);
       markersRef.current.push(marker);
     });
-  }, [spots, selectedSpotId, onSpotSelect, ready]);
+  }, [spots, selectedSpotId, visitedSpotIds, currentUserId, onSpotSelect, ready]);
 
   // 現在地マーカー
   useEffect(() => {
