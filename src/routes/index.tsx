@@ -3,10 +3,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { SpotMap } from "@/components/SpotMap";
-import { BottomSheet } from "@/components/BottomSheet";
 import { SearchPanel, searchSpots } from "@/components/SearchPanel";
 import type { SearchQuery } from "@/components/SearchPanel";
-import { SearchIcon, NavigationIcon } from "@/components/Icons";
+import { SearchIcon, NavigationIcon, HeartIcon } from "@/components/Icons";
 import { formatArea, getAreaCenter, spotInAreaSelections, type AreaSelection } from "@/lib/regions";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
@@ -25,16 +24,6 @@ export const Route = createFileRoute("/")({
     ],
   }),
 });
-
-function relativeDate(dateStr: string): string {
-  const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86_400_000);
-  if (days === 0) return "今日";
-  if (days === 1) return "昨日";
-  if (days < 7) return `${days}日前`;
-  if (days < 30) return `${Math.floor(days / 7)}週間前`;
-  if (days < 365) return `${Math.floor(days / 30)}ヶ月前`;
-  return `${Math.floor(days / 365)}年前`;
-}
 
 function readLocalVisitedSpotIds(userId: string): Set<string> {
   if (typeof window === "undefined") return new Set();
@@ -340,78 +329,68 @@ function HomePage() {
         )}
       </div>
 
-      {/* Bottom sheet */}
-      <BottomSheet isOpen={!!selectedSpot} onClose={() => setSelectedSpot(null)}>
-        {selectedSpot && (() => {
+      {/* Photo viewer */}
+      {selectedSpot &&
+        (() => {
           const isFav = favoriteIds.has(selectedSpot.id);
           const isOwnSpot = !!user && selectedSpot.user_id === user.id;
           const isVisited = visitedSpotIds.has(selectedSpot.id);
+          const photoUrl = selectedSpot.photo_url ?? "";
           return (
-            <div>
-              {selectedSpot.photo_url && (
-                <img
-                  src={selectedSpot.photo_url}
-                  alt="休息スポットの写真"
-                  className="w-full h-40 object-cover rounded-xl mb-3"
-                />
-              )}
-              <div className="flex items-center justify-end gap-2">
+            <div
+              className="fixed inset-0 z-[10000] bg-background/75 backdrop-blur-xl"
+              onClick={() => setSelectedSpot(null)}
+            >
+              <div className="absolute inset-0 bg-black/15" />
+              <button
+                type="button"
+                onClick={() => setSelectedSpot(null)}
+                className="absolute top-10 right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-card/90 text-foreground shadow-sm backdrop-blur-sm"
+                aria-label="閉じる"
+              >
+                ×
+              </button>
+              <div className="absolute inset-0 flex items-center justify-center px-3 py-20">
+                {photoUrl && (
+                  <img
+                    src={photoUrl}
+                    alt="休息スポットの写真"
+                    className="max-h-full max-w-full object-contain shadow-2xl"
+                    onClick={(event) => event.stopPropagation()}
+                  />
+                )}
+              </div>
+              <div
+                className="absolute bottom-6 right-4 z-10 flex items-center justify-end gap-2"
+                onClick={(event) => event.stopPropagation()}
+              >
                 {!isOwnSpot && (
                   <button
+                    type="button"
                     onClick={() => toggleVisited(selectedSpot.id)}
                     disabled={visitLoading}
-                    className={`flex-1 py-2.5 rounded-xl border text-sm font-medium transition-colors disabled:opacity-50 ${
+                    className={`h-11 rounded-full px-4 text-sm font-medium shadow-sm backdrop-blur-sm transition-colors disabled:opacity-50 ${
                       isVisited
-                        ? "border-blue-600 bg-blue-600 text-white"
-                        : "border-border bg-card text-foreground"
+                        ? "bg-blue-600 text-white"
+                        : "bg-card/90 text-foreground"
                     }`}
                   >
-                    行った
+                    行ったことある
                   </button>
                 )}
                 <button
+                  type="button"
                   onClick={() => toggleFavorite(selectedSpot.id)}
                   disabled={favLoading}
-                  className="w-9 h-9 flex items-center justify-center rounded-full bg-secondary shrink-0 active:scale-90 transition-transform text-foreground"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-card/90 text-foreground shadow-sm backdrop-blur-sm transition-transform active:scale-95 disabled:opacity-50"
                   aria-label={isFav ? "お気に入りから削除" : "お気に入りに追加"}
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill={isFav ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
-                  </svg>
+                  <HeartIcon size={19} strokeWidth={2} filled={isFav} />
                 </button>
-              </div>
-              <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground flex-wrap">
-                {selectedSpot.rest_duration_minutes && (
-                  <span>⏱ {selectedSpot.rest_duration_minutes}分休憩</span>
-                )}
-                {selectedSpot.created_at && (
-                  <span>🕐 {relativeDate(selectedSpot.created_at)}</span>
-                )}
-              </div>
-              {selectedSpot.description && (
-                <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{selectedSpot.description}</p>
-              )}
-              {selectedSpot.tags && selectedSpot.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-3">
-                  {selectedSpot.tags.map((tag) => (
-                    <span key={tag} className="tag-chip">{tag}</span>
-                  ))}
-                </div>
-              )}
-              <div className="mt-4">
-                <a
-                  href={`https://www.google.com/maps/dir/?api=1&destination=${selectedSpot.latitude},${selectedSpot.longitude}&travelmode=walking`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block w-full text-center py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium"
-                >
-                  経路を見る
-                </a>
               </div>
             </div>
           );
         })()}
-      </BottomSheet>
     </div>
   );
 }
