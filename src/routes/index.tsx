@@ -371,8 +371,8 @@ function HomePage() {
                     disabled={visitLoading}
                     className={`h-11 rounded-full px-4 text-sm font-medium shadow-sm backdrop-blur-sm transition-colors disabled:opacity-50 ${
                       isVisited
-                        ? "bg-blue-600 text-white"
-                        : "bg-card/90 text-foreground"
+                        ? "bg-[oklch(0.63_0.075_155)] text-primary-foreground"
+                        : "bg-[oklch(0.82_0.045_155)] text-foreground"
                     }`}
                   >
                     行ったことある
