@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { CameraIcon, ImageIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { LocationPicker } from "@/components/LocationPicker";
@@ -9,10 +10,7 @@ const DEFAULT_REST_CUE = "空を10秒見る";
 export const Route = createFileRoute("/add-spot")({
   component: AddSpotPage,
   head: () => ({
-    meta: [
-      { title: "スポットを投稿 — 目の前" },
-      { name: "description", content: "あなたの静かな休息スポットを共有する" },
-    ],
+    meta: [{ title: "投稿 — 目の前" }, { name: "description", content: "投稿" }],
   }),
 });
 
@@ -79,9 +77,7 @@ function AddSpotPage() {
   if (!user) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6 pb-20">
-        <p className="text-muted-foreground text-sm mb-4">
-          スポットを投稿するにはログインが必要です
-        </p>
+        <p className="text-muted-foreground text-sm mb-4">投稿するにはログインが必要です</p>
         <button
           onClick={() => navigate({ to: "/login" })}
           className="px-6 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium"
@@ -124,8 +120,7 @@ function AddSpotPage() {
   return (
     <div className="min-h-screen pb-20">
       <div className="px-5 pt-12 pb-4">
-        <h1 className="text-lg font-semibold text-foreground">スポットを投稿</h1>
-        <p className="text-xs text-muted-foreground mt-1">あなたの静かな休息場所を共有しましょう</p>
+        <h1 className="text-lg font-semibold text-foreground">投稿</h1>
       </div>
 
       <div className="px-5 space-y-6">
@@ -144,9 +139,9 @@ function AddSpotPage() {
               </button>
             </div>
           ) : (
-            <div className="flex gap-2">
-              <label className="flex-1 flex flex-col items-center justify-center gap-1.5 py-5 rounded-xl border border-dashed border-input bg-card cursor-pointer text-muted-foreground text-xs font-medium">
-                <span className="text-2xl">🖼️</span>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border border-border/70 bg-card cursor-pointer text-muted-foreground text-xs font-medium transition-colors active:bg-secondary">
+                <ImageIcon size={22} strokeWidth={1.8} />
                 アルバムから選ぶ
                 <input
                   type="file"
@@ -155,8 +150,8 @@ function AddSpotPage() {
                   onChange={(e) => handlePhotoChange(e.target.files?.[0] || null)}
                 />
               </label>
-              <label className="flex-1 flex flex-col items-center justify-center gap-1.5 py-5 rounded-xl border border-dashed border-input bg-card cursor-pointer text-muted-foreground text-xs font-medium">
-                <span className="text-2xl">📷</span>
+              <label className="flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border border-border/70 bg-card cursor-pointer text-muted-foreground text-xs font-medium transition-colors active:bg-secondary">
+                <CameraIcon size={22} strokeWidth={1.8} />
                 写真を撮る
                 <input
                   type="file"
@@ -193,9 +188,6 @@ function AddSpotPage() {
             {locating ? "取得中..." : "現在地にピンを移動"}
           </button>
           {locError && <p className="text-xs text-destructive mt-1">{locError}</p>}
-          <p className="text-[10px] text-muted-foreground mt-1">
-            地図をタップするか、ピンをドラッグして場所を指定してください
-          </p>
         </div>
 
         {/* 投稿ボタン */}
