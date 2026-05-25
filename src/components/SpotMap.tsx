@@ -7,6 +7,7 @@ interface SpotMapProps {
   spots: Spot[];
   onSpotSelect: (spot: Spot) => void;
   selectedSpotId?: string;
+  favoriteSpotIds?: Set<string>;
   visitedSpotIds?: Set<string>;
   currentUserId?: string;
   center?: [number, number];
@@ -18,6 +19,7 @@ export function SpotMap({
   spots,
   onSpotSelect,
   selectedSpotId,
+  favoriteSpotIds = new Set(),
   visitedSpotIds = new Set(),
   currentUserId,
   center = [35.0116, 135.7681],
@@ -80,12 +82,37 @@ export function SpotMap({
 
     spots.forEach((spot) => {
       const isSelected = spot.id === selectedSpotId;
+      const isFavoriteSpot = favoriteSpotIds.has(spot.id);
       const isOwnSpot = !!currentUserId && spot.user_id === currentUserId;
       const isVisitedSpot =
         !!currentUserId && spot.user_id !== currentUserId && visitedSpotIds.has(spot.id);
       const statusBorderColor = isOwnSpot ? "#f97316" : isVisitedSpot ? "#2563eb" : null;
-      const borderColor = statusBorderColor ?? (isSelected ? "#5a8a6a" : "#f8f6f0");
-      const borderWidth = statusBorderColor || isSelected ? 3 : 2;
+      const borderColor =
+        statusBorderColor ?? (isFavoriteSpot ? "#f9a8d4" : isSelected ? "#5a8a6a" : "#f8f6f0");
+      const borderWidth = statusBorderColor || isSelected || isFavoriteSpot ? 3 : 2;
+      const favoriteBadge = isFavoriteSpot
+        ? `
+          <div style="
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            width: 19px;
+            height: 19px;
+            border-radius: 50%;
+            background: #fde7ef;
+            color: #b8325f;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.18);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          ">
+            <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" aria-hidden="true">
+              <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+            </svg>
+          </div>
+        `
+        : "";
 
       let marker: any;
 
@@ -100,11 +127,12 @@ export function SpotMap({
               border-radius: 50%;
               border: ${borderWidth}px solid ${borderColor};
               box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-              overflow: hidden;
               cursor: pointer;
-              background: #e8e4dc;
+              background: ${isFavoriteSpot ? "#fde7ef" : "#e8e4dc"};
+              position: relative;
             ">
-              <img src="${spot.photo_url}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'" />
+              <img src="${spot.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;" onerror="this.style.display='none'" />
+              ${favoriteBadge}
             </div>
           `,
           iconSize: [size, size],
@@ -142,7 +170,7 @@ export function SpotMap({
       marker.addTo(leafletMap.current!);
       markersRef.current.push(marker);
     });
-  }, [spots, selectedSpotId, visitedSpotIds, currentUserId, onSpotSelect, ready]);
+  }, [spots, selectedSpotId, favoriteSpotIds, visitedSpotIds, currentUserId, onSpotSelect, ready]);
 
   // 現在地マーカー
   useEffect(() => {

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { MapIcon, HeartIcon, PlusIcon, SettingsIcon } from "@/components/Icons";
+import { MapIcon, PlusIcon, SettingsIcon } from "@/components/Icons";
 
 export function NavBar() {
   const location = useLocation();
@@ -7,7 +7,6 @@ export function NavBar() {
 
   const navItems = [
     { to: "/" as const, label: "地図", Icon: MapIcon },
-    { to: "/saved" as const, label: "保存", Icon: HeartIcon },
     { to: "/settings" as const, label: "設定", Icon: SettingsIcon },
   ];
   const showPostButton = path !== "/add-spot";

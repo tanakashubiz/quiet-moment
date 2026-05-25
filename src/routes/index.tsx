@@ -231,6 +231,7 @@ function HomePage() {
         spots={filteredSpots}
         onSpotSelect={handleSpotSelect}
         selectedSpotId={selectedSpot?.id}
+        favoriteSpotIds={favoriteIds}
         visitedSpotIds={visitedSpotIds}
         currentUserId={user?.id}
         center={mapCenter}
