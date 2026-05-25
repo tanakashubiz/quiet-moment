@@ -24,14 +24,12 @@ export function BottomSheet({ isOpen, onClose, children }: BottomSheetProps) {
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 z-[2001] bg-card bottom-sheet max-h-[70vh] overflow-y-auto"
+            className="fixed bottom-14 left-0 right-0 z-[2001] bg-card bottom-sheet max-h-[70vh] overflow-y-auto"
           >
             <div className="flex justify-center pt-3 pb-1">
               <div className="w-10 h-1 bg-border rounded-full" />
             </div>
-            <div className="px-5 pb-8">
-              {children}
-            </div>
+            <div className="px-5 pb-5">{children}</div>
           </motion.div>
         </>
       )}
