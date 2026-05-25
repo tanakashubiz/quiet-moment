@@ -107,7 +107,7 @@ function AddSpotPage() {
     }
 
     const { error } = await supabase.from("spots").insert({
-      title: `投稿スポット-${Date.now()}`,
+      title: "",
       description: null,
       latitude: lat,
       longitude: lng,

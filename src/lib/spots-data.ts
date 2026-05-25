@@ -1,7 +1,7 @@
 // Sample Kyoto rest spots for seeding
 export const sampleSpots = [
   {
-    title: "鴨川・丸太町ベンチ",
+    title: "",
     description: "丸太町橋のたもとにある、柳の木陰のベンチ。川面の光がゆれて、風が頬をなでる。仕事のことを忘れて、ただ水を見ていられる場所。",
     latitude: 35.0186,
     longitude: 135.7700,
@@ -12,7 +12,7 @@ export const sampleSpots = [
     photo_url: "/spots/kamogawa-marutamachi.jpg",
   },
   {
-    title: "下鴨神社・糺の森入口",
+    title: "",
     description: "原生林が残る糺の森。木漏れ日が揺れる参道を少し歩くだけで、空気がやわらかく変わる。鳥の声だけが聞こえる。",
     latitude: 35.0382,
     longitude: 135.7724,
@@ -23,7 +23,7 @@ export const sampleSpots = [
     photo_url: "/spots/tadasu-no-mori.jpg",
   },
   {
-    title: "高瀬川・木屋町の路地",
+    title: "",
     description: "細い高瀬川沿いの路地。水が静かに流れ、朝の光が石畳を照らす。人通りが少ない午前中がおすすめ。",
     latitude: 35.0050,
     longitude: 135.7710,
@@ -34,7 +34,7 @@ export const sampleSpots = [
     photo_url: "/spots/takasegawa.jpg",
   },
   {
-    title: "御所・出水の小道",
+    title: "",
     description: "京都御所の西側、出水口から入る小さな砂利道。広い空と古い松の木。ベンチに座って空を見上げると、思考が静かになる。",
     latitude: 35.0230,
     longitude: 135.7620,
@@ -45,7 +45,7 @@ export const sampleSpots = [
     photo_url: "/spots/gosho-demizu.jpg",
   },
   {
-    title: "白川・知恩院前の柳並木",
+    title: "",
     description: "白川に沿って柳が揺れる静かな小道。石橋の上に立つと、水のせせらぎと柳の葉音だけの世界。",
     latitude: 35.0050,
     longitude: 135.7810,
@@ -56,7 +56,7 @@ export const sampleSpots = [
     photo_url: "/spots/shirakawa.jpg",
   },
   {
-    title: "哲学の道・法然院手前",
+    title: "",
     description: "哲学の道の北端近く、法然院の手前の静かな区間。桜の木が並び、疏水の水が穏やかに流れる。特に平日の午前は人がほとんどいない。",
     latitude: 35.0270,
     longitude: 135.7960,
@@ -67,7 +67,7 @@ export const sampleSpots = [
     photo_url: "/spots/tetsugaku.jpg",
   },
   {
-    title: "建仁寺・裏庭の縁側",
+    title: "",
     description: "建仁寺の裏手、人があまり来ない小さな庭。苔と石と静寂。座って庭を眺めるだけで、頭の中が少し整理される。",
     latitude: 34.9990,
     longitude: 135.7740,
@@ -78,7 +78,7 @@ export const sampleSpots = [
     photo_url: "/spots/kennin-ji.jpg",
   },
   {
-    title: "船岡山公園・頂上ベンチ",
+    title: "",
     description: "小さな丘の頂上から京都市街が一望できる。風が気持ちよく、空が広い。登りは3分。短い散歩と展望で気分転換。",
     latitude: 35.0420,
     longitude: 135.7470,
@@ -89,7 +89,7 @@ export const sampleSpots = [
     photo_url: "/spots/funaokayama.jpg",
   },
   {
-    title: "鴨川デルタ・出町柳",
+    title: "",
     description: "賀茂川と高野川が合流するデルタ地帯。飛び石に座って足を川に向ける。水のきらめきを見ているだけで5分が過ぎる。",
     latitude: 35.0310,
     longitude: 135.7730,
@@ -100,7 +100,7 @@ export const sampleSpots = [
     photo_url: "/spots/kamogawa-delta.jpg",
   },
   {
-    title: "梅小路公園・芝生の隅",
+    title: "",
     description: "広い芝生の端に座って、空を見上げる。新幹線の音が遠くに聞こえるけれど、それもやがて風景に溶ける。",
     latitude: 34.9870,
     longitude: 135.7520,
