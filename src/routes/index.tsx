@@ -3,9 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { SpotMap } from "@/components/SpotMap";
-import { SearchPanel, searchSpots } from "@/components/SearchPanel";
-import type { SearchQuery } from "@/components/SearchPanel";
-import { SearchIcon, NavigationIcon, HeartIcon } from "@/components/Icons";
+import { NavigationIcon, HeartIcon } from "@/components/Icons";
 import { formatArea, getAreaCenter, spotInAreaSelections, type AreaSelection } from "@/lib/regions";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
@@ -90,18 +88,6 @@ function HomePage() {
       return [...prev, area];
     });
   };
-
-  // 検索パネル
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState<SearchQuery>({
-    restDuration: 60,
-    tags: [],
-    restCues: [],
-  });
-  const hasSearch =
-    searchQuery.restDuration < 60 ||
-    searchQuery.tags.length > 0 ||
-    searchQuery.restCues.length > 0;
 
   const fetchUserLocation = () => {
     if (!navigator.geolocation) {
@@ -214,10 +200,9 @@ function HomePage() {
     setVisitLoading(false);
   };
 
-  const searchFiltered = searchSpots(spots, searchQuery);
   const filteredSpots = activeAreas
-    ? searchFiltered.filter((s) => spotInAreaSelections(s.latitude, s.longitude, activeAreas))
-    : searchFiltered;
+    ? spots.filter((s) => spotInAreaSelections(s.latitude, s.longitude, activeAreas))
+    : spots;
 
   // ユーザーの地域リスト（メイン + サブ、重複除去）
   const userAreas: AreaSelection[] = userMainArea
@@ -242,7 +227,7 @@ function HomePage() {
       <div className="absolute top-0 left-0 right-0 z-[1000] pointer-events-none">
         <div className="max-w-lg mx-auto px-3 pt-12 flex items-start gap-2">
 
-          {/* 地域チップ列（flex-1で検索ボタンを右端に固定） */}
+          {/* 地域チップ列 */}
           <div className="flex-1 flex gap-1.5 flex-wrap pointer-events-auto">
             {userAreas.length > 0 && (
               <>
@@ -304,30 +289,7 @@ function HomePage() {
             <NavigationIcon size={16} strokeWidth={2} className={locating ? "animate-pulse" : ""} />
           </button>
 
-          {/* 検索ボタン */}
-          <button
-            onClick={() => setSearchOpen((v) => !v)}
-            className={`pointer-events-auto w-9 h-9 rounded-full flex items-center justify-center shadow-sm backdrop-blur-sm transition-colors shrink-0 ${
-              searchOpen || hasSearch
-                ? "bg-primary text-primary-foreground"
-                : "bg-white/85 text-foreground"
-            }`}
-            aria-label="検索"
-          >
-            <SearchIcon size={16} strokeWidth={2} />
-          </button>
         </div>
-
-        {/* 検索パネル */}
-        {searchOpen && (
-          <div className="pointer-events-auto max-w-lg mx-auto">
-            <SearchPanel
-              query={searchQuery}
-              onChange={setSearchQuery}
-              onClose={() => setSearchOpen(false)}
-            />
-          </div>
-        )}
       </div>
 
       {/* Photo viewer */}

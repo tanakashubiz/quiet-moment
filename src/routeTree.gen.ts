@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SavedRouteImport } from './routes/saved'
+import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AddSpotRouteImport } from './routes/add-spot'
 import { Route as IndexRouteImport } from './routes/index'
@@ -25,6 +26,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const SavedRoute = SavedRouteImport.update({
   id: '/saved',
   path: '/saved',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -57,6 +63,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/add-spot': typeof AddSpotRoute
   '/login': typeof LoginRoute
+  '/notifications': typeof NotificationsRoute
   '/saved': typeof SavedRoute
   '/settings': typeof SettingsRoute
   '/rest/$spotId': typeof RestSpotIdRoute
@@ -66,6 +73,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/add-spot': typeof AddSpotRoute
   '/login': typeof LoginRoute
+  '/notifications': typeof NotificationsRoute
   '/saved': typeof SavedRoute
   '/settings': typeof SettingsRoute
   '/rest/$spotId': typeof RestSpotIdRoute
@@ -76,6 +84,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/add-spot': typeof AddSpotRoute
   '/login': typeof LoginRoute
+  '/notifications': typeof NotificationsRoute
   '/saved': typeof SavedRoute
   '/settings': typeof SettingsRoute
   '/rest/$spotId': typeof RestSpotIdRoute
@@ -87,6 +96,7 @@ export interface FileRouteTypes {
     | '/'
     | '/add-spot'
     | '/login'
+    | '/notifications'
     | '/saved'
     | '/settings'
     | '/rest/$spotId'
@@ -96,6 +106,7 @@ export interface FileRouteTypes {
     | '/'
     | '/add-spot'
     | '/login'
+    | '/notifications'
     | '/saved'
     | '/settings'
     | '/rest/$spotId'
@@ -105,6 +116,7 @@ export interface FileRouteTypes {
     | '/'
     | '/add-spot'
     | '/login'
+    | '/notifications'
     | '/saved'
     | '/settings'
     | '/rest/$spotId'
@@ -115,6 +127,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AddSpotRoute: typeof AddSpotRoute
   LoginRoute: typeof LoginRoute
+  NotificationsRoute: typeof NotificationsRoute
   SavedRoute: typeof SavedRoute
   SettingsRoute: typeof SettingsRoute
   RestSpotIdRoute: typeof RestSpotIdRoute
@@ -135,6 +148,13 @@ declare module '@tanstack/react-router' {
       path: '/saved'
       fullPath: '/saved'
       preLoaderRoute: typeof SavedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -179,6 +199,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AddSpotRoute: AddSpotRoute,
   LoginRoute: LoginRoute,
+  NotificationsRoute: NotificationsRoute,
   SavedRoute: SavedRoute,
   SettingsRoute: SettingsRoute,
   RestSpotIdRoute: RestSpotIdRoute,

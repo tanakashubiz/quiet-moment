@@ -72,6 +72,41 @@ export type Database = {
           },
         ]
       }
+      spot_notifications: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          read_at: string | null
+          recipient_user_id: string
+          spot_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind?: string
+          read_at?: string | null
+          recipient_user_id: string
+          spot_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          read_at?: string | null
+          recipient_user_id?: string
+          spot_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spot_notifications_spot_id_fkey"
+            columns: ["spot_id"]
+            isOneToOne: false
+            referencedRelation: "spots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null

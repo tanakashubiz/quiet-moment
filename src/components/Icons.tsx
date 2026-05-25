@@ -51,6 +51,15 @@ export function SettingsIcon({ size = 20, className, strokeWidth = 2 }: IconProp
   );
 }
 
+export function BellIcon({ size = 20, className, strokeWidth = 2 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} {...base(strokeWidth)}>
+      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+      <path d="M10 21h4" />
+    </svg>
+  );
+}
+
 export function NavigationIcon({ size = 20, className, strokeWidth = 2 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" className={className} {...base(strokeWidth)}>

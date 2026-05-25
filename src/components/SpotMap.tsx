@@ -3,6 +3,8 @@ import type { Database } from "@/integrations/supabase/types";
 
 type Spot = Database["public"]["Tables"]["spots"]["Row"];
 
+const VISITED_SPOT_BORDER_COLOR = "oklch(0.63 0.075 155)";
+
 interface SpotMapProps {
   spots: Spot[];
   onSpotSelect: (spot: Spot) => void;
@@ -47,7 +49,7 @@ export function SpotMap({
       const Leaf = LRef.current;
 
       leafletMap.current = Leaf.map(mapRef.current!, {
-        zoomControl: true,
+        zoomControl: false,
         attributionControl: false,
         zoomDelta: 0.5,
         zoomSnap: 0.5,
@@ -86,7 +88,11 @@ export function SpotMap({
       const isOwnSpot = !!currentUserId && spot.user_id === currentUserId;
       const isVisitedSpot =
         !!currentUserId && spot.user_id !== currentUserId && visitedSpotIds.has(spot.id);
-      const statusBorderColor = isOwnSpot ? "#f97316" : isVisitedSpot ? "#2563eb" : null;
+      const statusBorderColor = isOwnSpot
+        ? "#f97316"
+        : isVisitedSpot
+          ? VISITED_SPOT_BORDER_COLOR
+          : null;
       const borderColor =
         statusBorderColor ?? (isFavoriteSpot ? "#f9a8d4" : isSelected ? "#5a8a6a" : "#f8f6f0");
       const borderWidth = statusBorderColor || isSelected || isFavoriteSpot ? 3 : 2;
